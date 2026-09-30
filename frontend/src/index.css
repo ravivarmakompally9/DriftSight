@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DriftSight console — navy rail + calm light workspace; ocean blues with a
+   sea-glass teal accent. Dosis for the wordmark and figures, Figtree for UI
+   text, IBM Plex Mono for coordinates and data. */
+@layer base {
+  :root {
+    --bg: #f3f6fa; --surface: #ffffff; --surface-2: #f6f8fb; --sunken: #edf1f6;
+    --border: #e0e6ef; --border-2: #cfd8e5;
+    --text: #0e1a2b; --text-2: #56637a; --text-3: #8390a5;
+    --brand: #0b7a83; --brand-2: #0a5e66; --brand-soft: #e3f4f4;
+    --navy: #0b1b33; --navy-2: #132744; --on-navy: #dce6f5; --on-navy-2: #8fa3c0;
+    --ok: #15803d; --ok-soft: #e4f5ea;
+    --warn: #b45309; --warn-soft: #fdf1df;
+    --crit: #d1352b; --crit-soft: #fce9e7;
+    --violet: #6d4ae0; --violet-soft: #eee9fd;
+    --ocean: #d5e5f3; --land: #f1f3f5; --coast: #97a7bc;
+    --pellet: #d97706; --current: #3f6fb5;
+    --ring: var(--brand);
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0a111d; --surface: #101a2a; --surface-2: #132035; --sunken: #0c1524;
+    --border: #1f2d44; --border-2: #2a3b57;
+    --text: #e6edf7; --text-2: #9aa8bf; --text-3: #6d7c95;
+    --brand: #35c2c4; --brand-2: #5ad6d6; --brand-soft: #0f2e33;
+    --navy: #070d18; --navy-2: #0e1829; --on-navy: #dce6f5; --on-navy-2: #7f92af;
+    --ok: #43c97f; --ok-soft: #10301f;
+    --warn: #f0b34a; --warn-soft: #33250e;
+    --crit: #f2685f; --crit-soft: #3a1614;
+    --violet: #a58bff; --violet-soft: #221a44;
+    --ocean: #0b1b30; --land: #1b2638; --coast: #44587a;
+    --pellet: #f2b544; --current: #6f95e0;
+    color-scheme: dark;
+  }
+
+  * { @apply border-line; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+  :focus-visible { @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-bg rounded-md; }
+  ::selection { background: var(--brand-soft); color: var(--brand); }
+
+  /* scrollbars that do not shout */
+  * { scrollbar-width: thin; scrollbar-color: var(--border-2) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+  *::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer components {
+  .tnum { font-variant-numeric: tabular-nums; }
+  .card-surface { @apply rounded-xl border border-line bg-surface shadow-card; }
+  .panel-blur { backdrop-filter: blur(8px); background: color-mix(in srgb, var(--surface) 92%, transparent); }
+  .hairline { @apply border-t border-line; }
+}
+
+/* MapLibre: keep its chrome inside our design system */
+.maplibregl-map { font: inherit; }
+.maplibregl-ctrl-group {
+  @apply rounded-lg border border-line shadow-card overflow-hidden;
+  background: var(--surface) !important;
+}
+.maplibregl-ctrl-group button + button { border-top-color: var(--border) !important; }
+.maplibregl-ctrl-group button { background: var(--surface) !important; }
+.maplibregl-ctrl-group button:hover { background: var(--surface-2) !important; }
+.maplibregl-ctrl-group button span { filter: var(--ctrl-icon-filter, none); }
+:root[data-theme="dark"] .maplibregl-ctrl-group button span { filter: invert(1) hue-rotate(180deg); }
+.maplibregl-ctrl-attrib {
+  @apply text-[10px];
+  background: color-mix(in srgb, var(--surface) 80%, transparent) !important;
+  color: var(--text-3) !important;
+}
+.maplibregl-ctrl-attrib a { color: var(--text-2) !important; }
+.maplibregl-popup-content {
+  @apply rounded-lg border border-line bg-surface text-ink shadow-card px-3 py-2 text-[12.5px];
+}
+.maplibregl-popup-tip { border-top-color: var(--surface) !important; border-bottom-color: var(--surface) !important; }
+.maplibregl-canvas:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

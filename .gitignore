@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.db
+
+# trained artefacts are reproducible from the seed
+backend/models/*.joblib
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Env — never commit secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store

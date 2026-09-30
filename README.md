@@ -1,0 +1,354 @@
+# DriftSight
+
+**Detect once, track always.** Satellite debris detection, ocean drift tracking and
+clean-up tasking for floating marine plastic — built around the **MSC ELSA 3**
+container ship that sank off Kerala on **25 May 2025** and spilled plastic
+nurdles that washed ashore from Alappuzha down to Kanyakumari and round to
+Rameswaram.
+
+> **Prototype.** The satellite imagery and the ocean fields in this build are
+> *simulated*. No number this app shows is a measurement. Every screen says so,
+> and [How to switch to real data](#how-to-switch-to-real-data) is the plan for
+> changing that.
+
+---
+
+## The idea
+
+A single satellite image cannot tell plastic from sun glint, whitecap foam or a
+Sargassum raft. Published Sentinel-2 detectors get fooled by all three. So
+DriftSight does not try to decide from one image.
+
+| | |
+|---|---|
+| **Detect** | An AI classifier flags suspected plastic in each clear pass. |
+| **Track** | Every detection seeds a cloud of virtual particles that drifts with the currents and the wind. |
+| **Confirm** | At the next clear image: found near the predicted spot → confidence up. Missing → confidence down. Under cloud → keep predicting. |
+
+Real debris keeps re-appearing where the currents put it, and gets **confirmed**.
+Look-alikes do not, and get **rejected** before anyone launches a boat.
+
+Pellets are a separate problem: a nurdle is a few millimetres across, so nothing
+in orbit will ever see one. They are **forecast** forward from the wreck instead,
+which is what lets a beach be warned before the pellets arrive.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph FE["Frontend · React 18 + TypeScript + Vite"]
+    UI["8 screens<br/>Overview · Map · Detections · Tracks<br/>Forecast · Missions · Report · Data"]
+    Z["Zustand<br/>global as-of hour, layers, theme"]
+    Q["TanStack Query<br/>cache per (run, hour)"]
+    M["MapLibre GL<br/>CARTO basemap, no API key"]
+    UI --- Z
+    UI --- Q
+    UI --- M
+  end
+
+  subgraph BE["Backend · FastAPI + NumPy + scikit-learn"]
+    API["REST /api · OpenAPI at /docs"]
+    SC["scenario/elsa3<br/>14-day replay, 8 passes"]
+    DT["detect/<br/>spectra · classifier · chips"]
+    TR["track/<br/>Bayesian track manager"]
+    DR["drift/<br/>vectorised RK2 particles"]
+    OC["ocean/<br/>OceanProvider"]
+    GE["geo/<br/>GSHHS land mask"]
+    AN["analysis/<br/>forecast · backtrack · priority · report"]
+    DB[("SQLite<br/>runs · missions · field results")]
+    API --> SC --> DT & TR & DR
+    DR --> OC & GE
+    API --> AN
+    API --> DB
+  end
+
+  subgraph SRC["Data sources"]
+    SYN["SyntheticMonsoonProvider<br/><b>in use</b>"]
+    CM["CMEMSProvider<br/><i>stub</i>"]
+    E5["ERA5Provider<br/><i>stub</i>"]
+  end
+
+  Q -->|"fetch"| API
+  OC --- SYN
+  OC -.-> CM
+  OC -.-> E5
+```
+
+**Loop that makes it better over time:** a completed mission records
+`debris_found` / `nothing_found`, which is stored as a labelled sample. Those
+labels are what a retrained detector learns from.
+
+---
+
+## Quick start
+
+Needs **Python 3.11+** and **Node 20+**.
+
+```bash
+make dev
+```
+
+* Console — <http://localhost:5173>
+* API docs — <http://localhost:8000/docs>
+
+Sign in with either demo account (both password `demo123`):
+
+| Account | Role | Sees |
+|---|---|---|
+| `analyst@incois.demo` | analyst | everything |
+| `field@coastguard.demo` | field team | only its own missions |
+
+These are published demo credentials for a prototype, not secrets.
+
+```bash
+make test      # pytest (engine parity, detector, tracker, API) + tsc
+make build     # production build of the console
+make help      # every target
+```
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+Console on <http://localhost:8080>, API on <http://localhost:8000>. nginx proxies
+`/api`, `/docs` and `/openapi.json` to the API container, so the browser talks to
+one origin. The SQLite file lives in a named volume.
+
+---
+
+## 60-second demo script
+
+Open the **Operations map** and press play. The default time is 1 Jun, 12:00 IST.
+
+| Time | What to point at |
+|---|---|
+| **27 May** | First clear Sentinel-2 pass. The AI flags three candidates — **A**, **B**, **C**. Nothing is confirmed yet; one image is not evidence. |
+| **28–29 May** | Two passes, both fully clouded. Confidence barely moves and the particle clouds keep drifting — *the model is still predicting when the sensor is blind*. |
+| **30 May** | Clear pass. **A** and **C** turn up 13.7 km and 13.6 km from the forecast, inside the gate → both **CONFIRMED as real debris**. A new candidate **D** appears. |
+| **1 Jun** | Partly clouded. **D** is not where the currents put it → **REJECTED as a look-alike**. (It was sun glint.) |
+| **4 Jun** | **B** misses again → **REJECTED**. Two boats' worth of false tasking never left harbour. |
+| **Landfall forecast** | Pellets reach **Kanyakumari on 29 May, 04:00 IST** — 1.3 days before the 30 May beach survey that rated pellet pollution "Very High". |
+
+Then open a confirmed patch and press **Trace to source**: the drift model runs
+backwards and passes 7.5 km from the wreck, an 84 % match.
+
+Turn on **Hidden truth (demo)** in the layer panel to check the verdicts against
+the ground truth the detector never sees.
+
+---
+
+## What the replay produces
+
+Defaults: gate 16 km, confirm 0.80, reject 0.25, cloud decay 0.90, 1,600 pellets,
+seed 2025. Deterministic — the same numbers every run, on every machine.
+
+| | |
+|---|---|
+| AI detections | 11 across 8 passes (4 usable, 4 clouded) |
+| Real debris fields confirmed | **2** |
+| Look-alikes rejected | **2** (both sun glint) |
+| False alarms ever confirmed | **0** |
+| Mean forecast error before a fix | 8.6 km |
+| First pellets at Kanyakumari | 29 May, 04:00 IST — **before 30 May** |
+| Reported districts reached | 3 of 5 |
+| Detector held-out accuracy | 96.8 % |
+| Full 14-day run | ~0.4 s |
+
+These are asserted in `backend/tests/test_engine_parity.py`, so the story cannot
+silently drift.
+
+The two reported districts the run misses — Alappuzha and Ramanathapuram — are
+the honest limit of a synthetic circulation, not a bug to paper over. Real
+INCOIS/CMEMS fields are what fix them.
+
+---
+
+## Screens
+
+1. **Overview** — five KPIs, situation map, alert feed, confidence-per-patch chart, landfall by district, satellite pass strip, top priority.
+2. **Operations map** — full-screen MapLibre with layer toggles (currents, pellets, tracks, detections, priority zones, cloud, hidden truth), a replay player with coloured pass markers, and a detail drawer for any patch, zone or the wreck.
+3. **Detections** — filterable table with an AI-score meter; detail panel with the true-colour and probability chips, the spectral signature against water and a plastic reference, FDI and the linked track. Upload a real 6-band GeoTIFF to run the same detector on it.
+4. **Tracks** — a card per patch: confidence history, chips, forecast error, source trace, full event log.
+5. **Landfall forecast** — cumulative arrival curves with a "now" line, district outlook, and the check against what was actually reported.
+6. **Missions** — Kanban from *Suggested by DriftSight* through *Completed*. Field results become retraining labels. GeoJSON export for QGIS or a phone.
+7. **Situation report** — document-style report for any replay time; copy as text or download a PDF.
+8. **Data & models** — detector accuracy and confusion matrix, spectral library, tracking-parameter sliders with re-run, the data-source inventory (marked simulated / planned / used), and the pass table.
+
+---
+
+## API
+
+Everything is documented and executable at **`/docs`**. Prefix `/api`.
+
+| | |
+|---|---|
+| `POST /auth/login` · `GET /auth/me` · `GET /auth/demo-accounts` | JWT sign-in |
+| `GET /incidents` · `GET /incidents/elsa3` | ship facts, wreck, reported landfall, passes |
+| `GET /geo` · `GET /passes` · `GET /currents` | coastline and harbours, pass schedule, current field on a grid |
+| `POST /runs` · `GET /runs` · `GET /runs/latest` | run the 14-day analysis with a parameter set |
+| `GET /runs/{id}/summary?h=` | KPIs at an hour |
+| `GET /runs/{id}/frame/{h}?truth=` | packed particle positions (~36 KB, well under the 300 KB budget) |
+| `GET /runs/{id}/detections` · `GET /detections/{id}` | detections; the detail carries chip bands, probability map, spectrum, FDI |
+| `GET /runs/{id}/tracks` · `GET /tracks/{id}` | tracks with confidence history, sightings, forecast errors, events |
+| `POST /tracks/{id}/backtrace` | reverse-drift path and source match score |
+| `GET /runs/{id}/forecast` | landfall by district, first/median arrival, 6-hourly cumulative curve, validation |
+| `GET /runs/{id}/priorities?h=` | ranked zones with level, window, nearest harbour, recommended action |
+| `GET /runs/{id}/events?until=h` | event feed |
+| `GET/POST /missions` · `PATCH /missions/{id}` · `DELETE` · `GET /field-results` | tasking and the labels it produces |
+| `GET /export/geojson?h=` | priority zones + missions, as a download |
+| `GET /reports/sitrep?h=&format=json\|md\|pdf` | situation report |
+| `GET /model` · `POST /detect/upload` | detector metrics, confusion matrix, spectral library; run the detector on a GeoTIFF |
+| `GET /health` | liveness |
+
+**Timebase.** Hour 0 is 25 May 2025 00:00 IST; the replay is 336 hours. Passes at
+11:00 IST on 27 May, 28 May (clouded), 29 May (clouded), 30 May, 1 Jun (partial),
+2 Jun (clouded), 4 Jun and 6 Jun.
+
+---
+
+## How it works
+
+**Detector** (`app/detect/`). Six Sentinel-2 bands — B2 490, B3 560, B4 665,
+B6 740, B8 842, B11 1610 nm — plus FDI, NDVI and NDWI, into a four-class
+multinomial logistic regression (debris / foam / algae / water) trained on
+synthetic labelled spectra. 96.8 % held-out accuracy.
+
+The regularisation is deliberately strong. An unregularised fit separates sun
+glint from plastic almost perfectly on these spectra, which no real single-image
+detector does — and a detector that is never wrong makes tracking pointless.
+Keeping the boundary soft reproduces the confusability the whole system exists to
+handle.
+
+`detect_chip` classifies every pixel of a 24×24 chip (240 m on a side), takes the
+largest 4-connected blob above P = 0.5, and reports its mean probability, area and
+mean FDI.
+
+**Drift** (`app/drift/`, `app/ocean/`). Hourly RK2 advection through an
+`OceanProvider`, plus a per-particle windage fraction of the 10 m wind, plus a
+random walk. Particles beach on a 0.01° GSHHS land mask and stop. The synthetic
+field is a West India Coastal Current jet with monsoon Ekman drift, divergence-free
+mesoscale eddies and a semidiurnal tide. **Debris drifts through one parameter set
+and DriftSight predicts with another**, so the tracker faces a realistic forecast
+error rather than a perfect model.
+
+**Tracker** (`app/track/`). Global nearest-first association inside a gate of
+`max(gate_km, 3σ)` — never tighter than the forecast's own spread. Odds updates:
+
+```
+re-found    ×  4·√(q/(1−q))·exp(−(d/gate)²)     q = detection quality, d = miss distance
+missed      ×  0.25
+clouded     ×  0.90
+```
+
+Confidence ≥ 0.80 confirms; < 0.25 rejects; a cloud that is >70 % ashore is
+"landed".
+
+**Everything stochastic is reproducible.** The Python port carries a vectorised
+NumPy version of the reference prototype's mulberry32 generator, so the replay is
+identical particle-for-particle to the original JavaScript engine — which is how
+`test_engine_parity.py` can assert the exact story.
+
+---
+
+## How to switch to real data
+
+Nothing below is wired up. Each item names the exact place to change.
+
+**1 · Imagery → Sentinel-2 / Landsat / Sentinel-1.**
+Replace `app/detect/chips.make_chip` with a real reader. `detect_geotiff()`
+already runs the production path: give it a 6-band GeoTIFF (B2 B3 B4 B6 B8 B11,
+reflectance 0–1 or 0–10000) and it returns blobs with areas and centroids in map
+coordinates — `pip install rasterio` to enable it. Pull scenes from the
+[Copernicus Data Space Ecosystem](https://dataspace.copernicus.eu/) (free, STAC +
+S3) or Google Earth Engine. Sentinel-1 SAR matters here: this coast is under
+monsoon cloud for weeks, and radar sees through it.
+
+**2 · Currents → CMEMS / INCOIS.** `app/ocean/providers.py::CMEMSProvider` carries
+step-by-step TODOs: `pip install copernicusmarine`, subset
+`GLOBAL_ANALYSISFORECAST_PHY_001_024` over lon 74.8–80.6 E / lat 6.8–11.0 N to
+NetCDF, interpolate with `scipy.interpolate.RegularGridInterpolator` over
+(time, lat, lon). Blend with the INCOIS regional forecast, which resolves the West
+India Coastal Current better than the 1/12° global product. Credentials go in env
+vars, never the repo.
+
+**3 · Winds → ERA5 / GFS.** `ERA5Provider` has the `cdsapi` recipe for
+`reanalysis-era5-single-levels` 10 m `u10`/`v10`. ERA5 lags about five days, so use
+GFS or the IMD forecast for anything near real time. The per-particle windage
+coefficient in `ParticleSet.windage` is already the right hook.
+
+**4 · Detector → U-Net.** Replace the logistic regression in
+`app/detect/model.py` with a segmentation model trained on
+[MARIDA](https://marine-debris.github.io/) and
+[MADOS](https://marine-debris.github.io/madosDataset.html) (published F1 ≈ 0.89),
+fine-tuned on Indian coastal scenes — and on the field labels this app already
+collects in the `field_results` table. `Detector.proba()` is the only interface
+the rest of the system uses, so nothing else has to change.
+
+**5 · Validation.** Keep scoring against reported landfall the way
+`analysis/forecast.py` does today. A forecast that cannot be checked is not a
+forecast.
+
+Switch the provider with `DRIFTSIGHT_OCEAN_PROVIDER=cmems` once implemented; see
+`backend/.env.example`.
+
+---
+
+## Layout
+
+```
+driftsight/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              FastAPI app, CORS, routers, startup
+│   │   ├── core/                config · security (JWT) · timebase · rng
+│   │   ├── geo/coast.py         GSHHS mask, districts, harbours, protected water
+│   │   ├── ocean/providers.py   Synthetic monsoon (default) · CMEMS · ERA5 stubs
+│   │   ├── drift/particles.py   Vectorised RK2 + windage + diffusion + beaching
+│   │   ├── detect/              spectra · model (sklearn) · chips (+ GeoTIFF)
+│   │   ├── track/tracker.py     Bayesian track manager
+│   │   ├── scenario/            elsa3 replay · in-memory run store
+│   │   ├── analysis/            forecast · backtrack · priority · report (MD/PDF)
+│   │   ├── db/                  SQLModel tables + session
+│   │   └── api/                 routers, schemas, compact serialisers
+│   └── tests/                   67 tests: parity · detector · tracker · geo/drift · API
+├── frontend/
+│   └── src/
+│       ├── pages/               8 screens
+│       ├── components/          ui (shadcn-style) · map · charts · shared
+│       ├── store/               Zustand: as-of hour, layers, theme, session
+│       ├── hooks/queries.ts     TanStack Query
+│       └── lib/                 API client, types, time, colours
+├── docker-compose.yml · Makefile · README.md
+```
+
+## Design
+
+Navy `#0B1B33` rail, sea-teal accent `#0B7A83` (dark `#35C2C4`), semantic
+ok/warn/crit/violet. Dosis for the wordmark and figures, Figtree for UI, IBM Plex
+Mono for coordinates and data. 12 px cards, tabular numerals, status pills,
+skeleton loaders, keyboard focus rings, and a light/dark/system theme that the
+map and every chart follow. The sidebar becomes a drawer below 1024 px.
+
+## Notes
+
+* No secrets are committed. Dependencies are pinned in `backend/requirements.txt`
+  and `frontend/package.json`.
+* On macOS with NumPy 2.x + Apple Accelerate you may see a
+  `RuntimeWarning: divide by zero encountered in matmul` at startup. It is a known
+  false positive from Accelerate's BLAS setting FP flags spuriously; results are
+  unaffected and the Linux containers do not show it.
+* The map needs network access for the CARTO basemap. If it cannot be reached,
+  DriftSight falls back to drawing the GSHHS coastline it already holds and says
+  so on the map.
+
+## Credits & sources
+
+Coastline and land mask from **GSHHS**. Basemap tiles © **CARTO**, © **OpenStreetMap**
+contributors. Incident details and reported landfall from INCOIS, contemporary
+news reporting, and the *Marine Pollution Bulletin* (2025) beach survey at
+Kanyakumari on 30 May 2025. Spectral indices after Biermann et al. (FDI).
+MARIDA and MADOS are named as the production training sets; neither is used here.

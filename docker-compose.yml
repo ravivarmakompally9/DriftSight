@@ -1,0 +1,27 @@
+name: driftsight
+
+services:
+  api:
+    build: ./backend
+    environment:
+      # Demo prototype. Override the secret for anything beyond a local demo.
+      DRIFTSIGHT_JWT_SECRET: ${DRIFTSIGHT_JWT_SECRET:-driftsight-dev-secret-change-me}
+      DRIFTSIGHT_CORS_ORIGINS: "http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080"
+      DRIFTSIGHT_DATABASE_URL: sqlite:////data/driftsight.db
+    volumes:
+      - driftsight-data:/data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  driftsight-data:
