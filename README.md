@@ -178,27 +178,10 @@ it everywhere. The demo script above walks the ones that carry the argument.
 
 ## API
 
-Everything is documented and executable at **`/docs`**. Prefix `/api`.
-
-| | |
-|---|---|
-| `POST /auth/login` · `GET /auth/me` · `GET /auth/demo-accounts` | JWT sign-in |
-| `GET /incidents` · `GET /incidents/elsa3` | ship facts, wreck, reported landfall, passes |
-| `GET /geo` · `GET /passes` · `GET /currents` | coastline and harbours, pass schedule, current field on a grid |
-| `POST /runs` · `GET /runs` · `GET /runs/latest` | run the 14-day analysis with a parameter set |
-| `GET /runs/{id}/summary?h=` | KPIs at an hour |
-| `GET /runs/{id}/frame/{h}?truth=` | packed particle positions (~36 KB, well under the 300 KB budget) |
-| `GET /runs/{id}/detections` · `GET /detections/{id}` | detections; the detail carries chip bands, probability map, spectrum, FDI |
-| `GET /runs/{id}/tracks` · `GET /tracks/{id}` | tracks with confidence history, sightings, forecast errors, events |
-| `POST /tracks/{id}/backtrace` | reverse-drift path and source match score |
-| `GET /runs/{id}/forecast` | landfall by district, first/median arrival, 6-hourly cumulative curve, validation |
-| `GET /runs/{id}/priorities?h=` | ranked zones with level, window, nearest harbour, recommended action |
-| `GET /runs/{id}/events?until=h` | event feed |
-| `GET/POST /missions` · `PATCH /missions/{id}` · `DELETE` · `GET /field-results` | tasking and the labels it produces |
-| `GET /export/geojson?h=` | priority zones + missions, as a download |
-| `GET /reports/sitrep?h=&format=json\|md\|pdf` | situation report |
-| `GET /model` · `POST /detect/upload` | detector metrics, confusion matrix, spectral library; run the detector on a GeoTIFF |
-| `GET /health` | liveness |
+31 endpoints under `/api`, documented and executable at **`/docs`** — sign-in,
+incident and pass schedule, runs, per-hour frames, detections, tracks and source
+tracing, landfall forecast, priority zones, missions, GeoJSON and PDF export,
+detector metrics, and GeoTIFF upload.
 
 **Timebase.** Hour 0 is 25 May 2025 00:00 IST; the replay is 336 hours. Passes at
 11:00 IST on 27 May, 28 May (clouded), 29 May (clouded), 30 May, 1 Jun (partial),
@@ -208,31 +191,25 @@ Everything is documented and executable at **`/docs`**. Prefix `/api`.
 
 ## How it works
 
-**Detector** (`app/detect/`). Six Sentinel-2 bands — B2 490, B3 560, B4 665,
-B6 740, B8 842, B11 1610 nm — plus FDI, NDVI and NDWI, into a four-class
-multinomial logistic regression (debris / foam / algae / water) trained on
-synthetic labelled spectra. 96.8 % held-out accuracy.
+**Detector** (`app/detect/`). Six Sentinel-2 bands plus FDI, NDVI and NDWI into a
+four-class logistic regression — debris / foam / algae / water — trained on
+synthetic labelled spectra, 96.8 % held out. Per chip it classifies every pixel of
+a 24×24 window (240 m a side) and reports the largest 4-connected blob above
+P = 0.5.
 
 The regularisation is deliberately strong. An unregularised fit separates sun
-glint from plastic almost perfectly on these spectra, which no real single-image
-detector does — and a detector that is never wrong makes tracking pointless.
-Keeping the boundary soft reproduces the confusability the whole system exists to
-handle.
-
-`detect_chip` classifies every pixel of a 24×24 chip (240 m on a side), takes the
-largest 4-connected blob above P = 0.5, and reports its mean probability, area and
-mean FDI.
+glint from plastic almost perfectly, which no real single-image detector does —
+and a detector that is never wrong makes tracking pointless.
 
 **Drift** (`app/drift/`, `app/ocean/`). Hourly RK2 advection through an
 `OceanProvider`, plus a per-particle windage fraction of the 10 m wind, plus a
-random walk. Particles beach on a 0.01° GSHHS land mask and stop. The synthetic
-field is a West India Coastal Current jet with monsoon Ekman drift, divergence-free
-mesoscale eddies and a semidiurnal tide. **Debris drifts through one parameter set
-and DriftSight predicts with another**, so the tracker faces a realistic forecast
-error rather than a perfect model.
+random walk; particles beach on a 0.01° GSHHS land mask and stop. **Debris drifts
+through one parameter set and DriftSight predicts with another**, so the tracker
+faces a realistic forecast error rather than a perfect model.
 
-**Tracker** (`app/track/`). Global nearest-first association inside a gate of
-`max(gate_km, 3σ)` — never tighter than the forecast's own spread. Odds updates:
+**Tracker** (`app/track/`). Nearest-first association inside a gate of
+`max(gate_km, 3σ)` — never tighter than the forecast's own spread — then a
+likelihood-ratio update on the odds:
 
 ```
 re-found    ×  4·√(q/(1−q))·exp(−(d/gate)²)     q = detection quality, d = miss distance
@@ -240,13 +217,12 @@ missed      ×  0.25
 clouded     ×  0.90
 ```
 
-Confidence ≥ 0.80 confirms; < 0.25 rejects; a cloud that is >70 % ashore is
-"landed".
+Above 0.80 confirms, below 0.25 rejects.
 
-**Everything stochastic is reproducible.** The Python port carries a vectorised
-NumPy version of the reference prototype's mulberry32 generator, so the replay is
-identical particle-for-particle to the original JavaScript engine — which is how
-`test_engine_parity.py` can assert the exact story.
+**Reproducible to the particle.** A vectorised NumPy port of the reference
+prototype's mulberry32 generator makes the replay identical to the original
+JavaScript engine — which is how `test_engine_parity.py` can assert the exact
+story rather than a tolerance.
 
 ---
 
