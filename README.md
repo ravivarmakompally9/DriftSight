@@ -169,14 +169,10 @@ INCOIS/CMEMS fields are what fix them.
 
 ## Screens
 
-1. **Overview** — five KPIs, situation map, alert feed, confidence-per-patch chart, landfall by district, satellite pass strip, top priority.
-2. **Operations map** — full-screen MapLibre with layer toggles (currents, pellets, tracks, detections, priority zones, cloud, hidden truth), a replay player with coloured pass markers, and a detail drawer for any patch, zone or the wreck.
-3. **Detections** — filterable table with an AI-score meter; detail panel with the true-colour and probability chips, the spectral signature against water and a plastic reference, FDI and the linked track. Upload a real 6-band GeoTIFF to run the same detector on it.
-4. **Tracks** — a card per patch: confidence history, chips, forecast error, source trace, full event log.
-5. **Landfall forecast** — cumulative arrival curves with a "now" line, district outlook, and the check against what was actually reported.
-6. **Missions** — Kanban from *Suggested by DriftSight* through *Completed*. Field results become retraining labels. GeoJSON export for QGIS or a phone.
-7. **Situation report** — document-style report for any replay time; copy as text or download a PDF.
-8. **Data & models** — detector accuracy and confusion matrix, spectral library, tracking-parameter sliders with re-run, the data-source inventory (marked simulated / planned / used), and the pass table.
+**Overview** · **Operations map** · **Detections** · **Tracks** · **Landfall forecast** · **Missions** · **Situation report** · **Data & models**
+
+All eight share one as-of clock in the top bar, so moving time on any screen moves
+it everywhere. The demo script above walks the ones that carry the argument.
 
 ---
 
@@ -297,46 +293,8 @@ Switch the provider with `DRIFTSIGHT_OCEAN_PROVIDER=cmems` once implemented; see
 
 ---
 
-## Layout
-
-```
-driftsight/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              FastAPI app, CORS, routers, startup
-│   │   ├── core/                config · security (JWT) · timebase · rng
-│   │   ├── geo/coast.py         GSHHS mask, districts, harbours, protected water
-│   │   ├── ocean/providers.py   Synthetic monsoon (default) · CMEMS · ERA5 stubs
-│   │   ├── drift/particles.py   Vectorised RK2 + windage + diffusion + beaching
-│   │   ├── detect/              spectra · model (sklearn) · chips (+ GeoTIFF)
-│   │   ├── track/tracker.py     Bayesian track manager
-│   │   ├── scenario/            elsa3 replay · in-memory run store
-│   │   ├── analysis/            forecast · backtrack · priority · report (MD/PDF)
-│   │   ├── db/                  SQLModel tables + session
-│   │   └── api/                 routers, schemas, compact serialisers
-│   └── tests/                   67 tests: parity · detector · tracker · geo/drift · API
-├── frontend/
-│   └── src/
-│       ├── pages/               8 screens
-│       ├── components/          ui (shadcn-style) · map · charts · shared
-│       ├── store/               Zustand: as-of hour, layers, theme, session
-│       ├── hooks/queries.ts     TanStack Query
-│       └── lib/                 API client, types, time, colours
-├── docker-compose.yml · Makefile · README.md
-```
-
-## Design
-
-Navy `#0B1B33` rail, sea-teal accent `#0B7A83` (dark `#35C2C4`), semantic
-ok/warn/crit/violet. Dosis for the wordmark and figures, Figtree for UI, IBM Plex
-Mono for coordinates and data. 12 px cards, tabular numerals, status pills,
-skeleton loaders, keyboard focus rings, and a light/dark/system theme that the
-map and every chart follow. The sidebar becomes a drawer below 1024 px.
-
 ## Notes
 
-* No secrets are committed. Dependencies are pinned in `backend/requirements.txt`
-  and `frontend/package.json`.
 * On macOS with NumPy 2.x + Apple Accelerate you may see a
   `RuntimeWarning: divide by zero encountered in matmul` at startup. It is a known
   false positive from Accelerate's BLAS setting FP flags spuriously; results are
