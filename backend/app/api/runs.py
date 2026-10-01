@@ -7,6 +7,10 @@ from app.api.schemas import RunCreate
 from app.api.serialize import detection_payload, frame_payload, track_payload
 from app.analysis.forecast import landfall_report, pellet_state
 from app.analysis.priority import priorities
+from app.analysis.quantify import (
+    coast_affected, describe_position, headline, mass_estimate, pitches, plastic_afloat,
+)
+from app.core.config import settings
 from app.core.security import User, optional_user
 from app.core.timebase import HOURS, iso, label_ist
 from app.scenario.elsa3 import PASSES, RunParams
@@ -56,7 +60,13 @@ def get_latest() -> dict:
 
 
 @router.get("/runs/{run_id}/summary", summary="Headline KPIs at a point in the replay")
-def get_summary(run_id: str, h: int | None = HourQuery) -> dict:
+def get_summary(run_id: str, h: int | None = HourQuery,
+                tonnes: float = Query(None, ge=0, le=100000,
+                                      description="Assumed release mass in tonnes. "
+                                                  "Omit to leave mass figures out.")) -> dict:
+    """Leads with the answer -- is there plastic, where, how much -- before the
+    pipeline counts. Area afloat and coastline affected come straight from the
+    model; mass only appears when an assumption is supplied."""
     run = require_run(run_id)
     hh = clamp_hour(h)
     fr = run.frame(hh)
@@ -64,12 +74,18 @@ def get_summary(run_id: str, h: int | None = HourQuery) -> dict:
     counts = {s: sum(1 for x in fr.track_status if x == s)
               for s in ("confirmed", "watch", "rejected", "landed")}
     dets = [d for d in run.detections if d["h"] <= hh]
+    assumed = settings.assumed_release_tonnes if tonnes is None else tonnes
     return {
         "run_id": run.id,
         "h": hh,
         "at": iso(hh),
         "as_of": label_ist(hh),
         "hours": HOURS,
+        # --- what a person arrives wanting to know -----------------------
+        "headline": headline(run, hh, assumed),
+        "plastic": plastic_afloat(run, hh),
+        "coast": coast_affected(run, hh),
+        # --- how the pipeline is doing -----------------------------------
         "detections": len(dets),
         "detections_total": len(run.detections),
         "passes_done": run.passes_done(hh),
@@ -101,6 +117,8 @@ def get_detections(run_id: str, h: int | None = HourQuery) -> dict:
     run = require_run(run_id)
     hh = clamp_hour(h)
     rows = [detection_payload(run, d, hh) for d in run.detections if d["h"] <= hh]
+    for r in rows:
+        r["where"] = describe_position(r["lon"], r["lat"])
     return {"run_id": run.id, "h": hh, "count": len(rows),
             "total": len(run.detections), "detections": rows}
 
@@ -110,14 +128,26 @@ def get_tracks(run_id: str, h: int | None = HourQuery) -> dict:
     run = require_run(run_id)
     hh = clamp_hour(h)
     rows = [track_payload(run, t, hh, full=True) for t in run.tracks if t.born <= hh]
+    for r in rows:
+        if r.get("centroid"):
+            r["where"] = describe_position(r["centroid"][0], r["centroid"][1])
+        r["pitches"] = pitches(r["area_m2"])
     return {"run_id": run.id, "h": hh, "tracks": rows}
 
 
 @router.get("/runs/{run_id}/forecast", summary="Pellet landfall by district")
-def get_forecast(run_id: str) -> dict:
+def get_forecast(run_id: str, h: int | None = HourQuery,
+                 tonnes: float = Query(None, ge=0, le=100000)) -> dict:
     run = require_run(run_id)
+    hh = clamp_hour(h)
     out = landfall_report(run)
     out["run_id"] = run.id
+    assumed = settings.assumed_release_tonnes if tonnes is None else tonnes
+    out["coast"] = coast_affected(run, hh)
+    out["coast_at_end"] = coast_affected(run, HOURS)
+    out["mass"] = mass_estimate(run, hh, assumed)
+    for row in out["districts"]:
+        row["coast_km"] = out["coast_at_end"]["km_by_district"].get(row["district"], 0.0)
     return out
 
 
@@ -125,7 +155,12 @@ def get_forecast(run_id: str) -> dict:
 def get_priorities(run_id: str, h: int | None = HourQuery) -> dict:
     run = require_run(run_id)
     hh = clamp_hour(h)
-    return {"run_id": run.id, "h": hh, "as_of": label_ist(hh), "zones": priorities(run, hh)}
+    zones = priorities(run, hh)
+    for z in zones:
+        z["where"] = describe_position(z["lon"], z["lat"])
+        if z.get("area_m2"):
+            z["pitches"] = pitches(z["area_m2"])
+    return {"run_id": run.id, "h": hh, "as_of": label_ist(hh), "zones": zones}
 
 
 @router.get("/runs/{run_id}/events", summary="Event feed up to an hour")

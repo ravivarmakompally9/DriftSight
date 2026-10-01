@@ -62,8 +62,14 @@ export default function Login() {
             Plastic you can see from orbit. Pellets you cannot.
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-onnavy-2">
-            DriftSight follows the debris from the MSC ELSA 3 sinking off Kerala on 25 May 2025 — and
-            forecasts where the nurdles come ashore, days before anyone finds them.
+            On <b className="text-white">25 May 2025</b> the container ship MSC ELSA 3 sank 13 nautical
+            miles off the Kerala coast with <b className="text-white">640 containers</b> aboard. Its
+            plastic nurdles reached beaches <b className="text-white">over 350 km away</b>, across five
+            districts from Alappuzha to Ramanathapuram — and nobody knew they were coming.
+          </p>
+          <p className="mt-2.5 text-[15px] leading-relaxed text-onnavy-2">
+            DriftSight finds the floating debris in satellite imagery, tracks it with the currents, and
+            forecasts which beaches the invisible pellets reach — days before anyone finds them.
           </p>
           <div className="mt-7 grid gap-4">
             {POINTS.map((p) => (

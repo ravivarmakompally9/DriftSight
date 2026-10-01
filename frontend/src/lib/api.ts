@@ -67,8 +67,8 @@ export const api = {
   latestRun: () => request<RunInfo>("/runs/latest"),
   createRun: (body: Partial<RunInfo["params"]>) =>
     request<RunInfo>("/runs", { method: "POST", body: JSON.stringify(body) }),
-  summary: (runId: number | "latest", h: number) =>
-    request<RunSummary>(`/runs/${runId}/summary${qs({ h })}`),
+  summary: (runId: number | "latest", h: number, tonnes?: number | null) =>
+    request<RunSummary>(`/runs/${runId}/summary${qs({ h, tonnes: tonnes ?? undefined })}`),
   frame: (runId: number | "latest", h: number, truth = false) =>
     request<Frame>(`/runs/${runId}/frame/${h}${qs({ truth: truth ? 1 : undefined })}`),
   detections: (runId: number | "latest", h?: number) =>
@@ -81,7 +81,8 @@ export const api = {
     request<Track>(`/tracks/${encodeURIComponent(id)}${qs({ run_id: runId, h })}`),
   backtrace: (id: string, runId: number | "latest" = "latest") =>
     request<Backtrace>(`/tracks/${encodeURIComponent(id)}/backtrace${qs({ run_id: runId })}`, { method: "POST" }),
-  forecast: (runId: number | "latest") => request<ForecastReport>(`/runs/${runId}/forecast`),
+  forecast: (runId: number | "latest", h?: number, tonnes?: number | null) =>
+    request<ForecastReport>(`/runs/${runId}/forecast${qs({ h, tonnes: tonnes ?? undefined })}`),
   priorities: (runId: number | "latest", h: number) =>
     request<{ zones: Zone[] }>(`/runs/${runId}/priorities${qs({ h })}`),
   events: (runId: number | "latest", until: number) =>

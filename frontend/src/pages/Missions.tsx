@@ -59,9 +59,15 @@ export default function Missions() {
                 <span className="text-xs text-ink-3">{z.kind === "sea" ? "at sea" : "coast"}</span>
               </div>
               <b className="text-sm">{z.name}</b>
-              <div className="flex flex-wrap gap-2 text-xs text-ink-2">
-                <span className="font-mono">{latlon(z.lat, z.lon)}</span>
+              <p className="text-xs leading-snug text-ink-2">
+                {z.kind === "sea" && z.area_m2
+                  ? <><b className="text-ink">{z.area_m2.toLocaleString()} m²</b> of floating plastic, {z.where ?? latlon(z.lat, z.lon)}</>
+                  : <>Pellet landfall {z.where ?? latlon(z.lat, z.lon)}</>}
+              </p>
+              <div className="flex flex-wrap gap-x-1.5 text-xs text-ink-3">
                 <span>confidence {pct(z.confidence)}</span>
+                <span aria-hidden>·</span>
+                <span>launch from {z.nearest_harbour} ({z.harbour_km.toFixed(0)} km)</span>
               </div>
               <div>
                 <Button size="sm" variant="default" onClick={() => setZone(z)}>
@@ -91,6 +97,7 @@ export default function Missions() {
                   <span className="flex items-center gap-1"><Users size={12} />{m.team}</span>
                   <span>{m.planned_date}</span>
                 </div>
+                <div className="font-mono text-[11px] text-ink-3">{latlon(m.lat, m.lon)}</div>
                 {m.notes && <p className="text-xs text-ink-2">{m.notes}</p>}
                 {m.result && (
                   <p className={`text-xs font-semibold ${m.result === "debris_found" ? "text-ok" : "text-crit"}`}>

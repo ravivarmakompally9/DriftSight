@@ -43,6 +43,32 @@ export interface RunInfo {
   hours?: number; t0?: string;
 }
 
+export interface PlasticField {
+  id: string; area_m2: number; pitches: number; lon: number; lat: number;
+  where: string; confidence: number; nearest_harbour: string;
+}
+export interface PlasticAfloat {
+  confirmed_fields: number; confirmed_area_m2: number; confirmed_pitches: number;
+  confirmed_area_phrase: string; watching_fields: number; watching_area_m2: number;
+  largest: PlasticField | null; fields: PlasticField[];
+}
+export interface CoastAffected {
+  km: number; cells: number;
+  districts: { district: string; pellets: number; km: number }[];
+  km_by_district: Record<string, number>;
+  district_count: number; pellets_ashore: number; places: string[]; method?: string;
+}
+export interface MassEstimate {
+  assumed_release_tonnes: number; ashore_tonnes: number; afloat_tonnes: number;
+  is_assumption: true; note: string;
+}
+export interface Headline {
+  verdict: string; tone: "crit" | "warn" | "ok" | "neutral"; found: boolean;
+  sentence: string; as_of: string;
+  afloat: PlasticAfloat; coast: CoastAffected; rejected: number;
+  mass: MassEstimate | null;
+}
+
 export interface PelletState {
   total: number; ashore: number; afloat: number; ashore_pct: number; afloat_pct: number;
 }
@@ -52,9 +78,11 @@ export interface Zone {
   status: string; window: [number, number]; window_label: string;
   nearest_harbour: string; harbour_km: number; action: string;
   coast_km?: number; area_m2?: number; share?: number;
+  where?: string; pitches?: number;
 }
 export interface RunSummary {
   run_id: number; h: number; at: string; as_of: string; hours: number;
+  headline: Headline; plastic: PlasticAfloat; coast: CoastAffected;
   detections: number; detections_total: number; passes_done: number; passes_total: number;
   confirmed: number; watching: number; rejected: number; landed: number;
   pellets: PelletState; high_priority: number; top_zones: Zone[];
@@ -81,6 +109,7 @@ export interface Detection {
   id: number; ref: string; h: number; at: string; as_of: string; pass: string; sensor: string;
   lon: number; lat: number; area_m2: number; pixels: number; score: number; fdi: number;
   track: string | null; status: TrackStatusName; simulated: boolean;
+  where?: string; area_phrase?: string; pitches?: number;
   chip?: ChipData; spectrum?: { detected: number[]; water: number[] };
 }
 
@@ -97,6 +126,7 @@ export interface Track {
   events: DriftEvent[];
   truth: { real: boolean; origin: string };
   latest_detection?: Detection;
+  where?: string; pitches?: number;
 }
 
 export interface Backtrace {
@@ -107,7 +137,7 @@ export interface Backtrace {
 }
 
 export interface DistrictForecast {
-  district: string; pellets: number; share: number; share_pct: number;
+  district: string; pellets: number; share: number; share_pct: number; coast_km?: number;
   first_hour: number | null; first_at: string | null; p10_hour: number | null;
   median_hour: number | null; median_at: string | null;
   reported_ashore: boolean; cumulative_pct: number[];
@@ -121,6 +151,9 @@ export interface ForecastReport {
     reported_districts: string[]; missed_districts: string[]; source: string; caveat: string;
   };
   simulated: boolean;
+  coast?: CoastAffected;
+  coast_at_end?: CoastAffected;
+  mass?: MassEstimate | null;
 }
 
 export type MissionStatus = "planned" | "in_progress" | "completed";

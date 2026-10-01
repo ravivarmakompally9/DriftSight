@@ -38,9 +38,21 @@ export function TrackDetail({
 
   return (
     <div className="grid gap-3.5">
-      <div className="flex items-baseline gap-2.5">
-        <span className="font-display text-[34px] font-bold leading-none tnum">{pct(track.confidence)}</span>
-        <span className="text-[13px] text-ink-2">confidence it is real floating debris</span>
+      <div className="grid gap-2">
+        <div className="flex items-baseline gap-2.5">
+          <span className="font-display text-[34px] font-bold leading-none tnum">{pct(track.confidence)}</span>
+          <span className="text-[13px] text-ink-2">confidence it is real floating plastic</span>
+        </div>
+        <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg bg-surface-2 px-3 py-2 text-[13px]">
+          <span>
+            <span className="text-ink-3">How much </span>
+            <b className="tnum">{num(track.area_m2)} m²</b>
+            {track.pitches ? <span className="text-ink-3"> · {track.pitches} pitches</span> : null}
+          </span>
+          {track.where && (
+            <span><span className="text-ink-3">Where </span><b>{track.where}</b></span>
+          )}
+        </div>
       </div>
 
       <ConfidenceChart tracks={[track]} hour={hour} height={140} legend={false} />
@@ -57,7 +69,6 @@ export function TrackDetail({
       <dl className="m-0 grid grid-cols-[minmax(110px,1fr)_auto] gap-x-4 gap-y-1.5 text-[13px]">
         <Row label="First seen" value={track.born_at} />
         <Row label="Sightings" value={track.sightings} />
-        <Row label="Estimated area" value={`${num(track.area_m2)} m²`} />
         {track.centroid && <Row label="Now (forecast)" value={latlon(track.centroid[1], track.centroid[0])} />}
         {errors.length > 0 && (
           <Row label="Forecast miss before fix" value={errors.map((e) => e.km.toFixed(1)).join(", ") + " km"} />

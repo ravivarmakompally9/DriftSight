@@ -39,6 +39,12 @@ export default function OpsMap() {
     [events.data, hour],
   );
 
+  const areaByTrack = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const t of tracks.data ?? []) out[t.id] = t.area_m2;
+    return out;
+  }, [tracks.data]);
+
   const activeTrace = selection?.type === "track" ? traces[selection.id]
     : selection?.type === "zone" ? traces[selection.id]
     : null;
@@ -50,6 +56,7 @@ export default function OpsMap() {
       <MapView
         className="absolute inset-0"
         frame={frame.data}
+        areaByTrack={areaByTrack}
         zones={zones.data}
         detections={detections.data}
         backtrace={activeTrace ?? null}
@@ -63,11 +70,12 @@ export default function OpsMap() {
       {/* KPI strip */}
       <div className="panel-blur absolute left-[268px] top-4 z-20 flex overflow-hidden rounded-xl border border-line shadow-float max-xl:hidden">
         {[
-          { label: "Confirmed", value: num(s?.confirmed), tone: "text-ok" },
-          { label: "Watching", value: num(s?.watching), tone: "text-warn" },
-          { label: "Rejected", value: num(s?.rejected), tone: "text-crit" },
-          { label: "Pellets ashore", value: s ? `${s.pellets.ashore_pct}%` : "—", tone: "" },
-          { label: "Top zone", value: zones.data?.[0]?.name ?? "—", tone: "", small: true },
+          { label: "Plastic afloat", value: s ? `${num(s.plastic.confirmed_area_m2)} m²` : "—", tone: "text-ok" },
+          { label: "Confirmed fields", value: num(s?.plastic.confirmed_fields), tone: "text-ok" },
+          { label: "Unconfirmed", value: num(s?.watching), tone: "text-warn" },
+          { label: "Not plastic", value: num(s?.rejected), tone: "text-crit" },
+          { label: "Coast affected", value: s ? `${s.coast.km.toFixed(0)} km` : "—", tone: "" },
+          { label: "Nearest field", value: s?.plastic.largest?.where ?? "—", tone: "", small: true },
         ].map((k) => (
           <div key={k.label} className="border-l border-line px-3.5 py-2 first:border-l-0">
             <small className="block text-[10.5px] uppercase tracking-wider text-ink-3">{k.label}</small>

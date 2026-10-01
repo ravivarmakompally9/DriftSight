@@ -58,15 +58,16 @@ export default function DataModels() {
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Debris detector</CardTitle>
-            <CardSub>per-pixel classifier · trained on synthetic labelled spectra</CardSub>
+            <CardTitle>Plastic detector</CardTitle>
+            <CardSub>how often it is right about what is floating</CardSub>
           </CardHeader>
           <CardBody className="grid gap-3">
             {model.isLoading || !m ? <Skeleton className="h-52" /> : (
               <>
                 <div className="flex flex-wrap gap-x-8 gap-y-3">
-                  <Figure value={`${(m.accuracy * 100).toFixed(1)}%`} label="held-out accuracy" />
-                  <Figure value={num(m.n_train)} label="training pixels" />
+                  <Figure value={`${(m.accuracy * 100).toFixed(1)}%`}
+                          label="of pixels classified correctly, on data it never saw" />
+                  <Figure value={num(m.n_train)} label="labelled training pixels" />
                   <Figure value={m.features.length} label="features: 6 bands + FDI, NDVI, NDWI" />
                 </div>
 

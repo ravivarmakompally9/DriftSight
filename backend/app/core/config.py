@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     model_path: Path = BACKEND_DIR / "models" / "detector.joblib"
 
     ocean_provider: str = "synthetic"  # synthetic | cmems | era5
+    # Spill mass is not observable from imagery or drift, so it is an operator
+    # assumption. 0 means "not set": mass figures stay hidden rather than being
+    # invented.
+    assumed_release_tonnes: float = 0.0
     train_on_startup: bool = True
     run_on_startup: bool = True
     max_cached_runs: int = 6

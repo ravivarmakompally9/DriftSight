@@ -22,7 +22,13 @@ function useRunId() {
 
 export function useSummary(hour: number) {
   const runId = useRunId();
-  return useQuery({ queryKey: ["summary", runId, hour], queryFn: () => api.summary(runId, hour), ...DERIVED });
+  const tonnes = useAppStore((s) => s.assumedTonnes);
+  return useQuery({
+    queryKey: ["summary", runId, hour, tonnes],
+    queryFn: () => api.summary(runId, hour, tonnes),
+    ...DERIVED,
+    placeholderData: (prev) => prev,
+  });
 }
 
 export function useFrame(hour: number, truth: boolean) {
@@ -82,9 +88,15 @@ export function useTracks(hour: number) {
   });
 }
 
-export function useForecast() {
+export function useForecast(hour?: number) {
   const runId = useRunId();
-  return useQuery({ queryKey: ["forecast", runId], queryFn: () => api.forecast(runId), ...DERIVED });
+  const tonnes = useAppStore((s) => s.assumedTonnes);
+  return useQuery({
+    queryKey: ["forecast", runId, hour, tonnes],
+    queryFn: () => api.forecast(runId, hour, tonnes),
+    ...DERIVED,
+    placeholderData: (prev) => prev,
+  });
 }
 
 export function useSitrep(hour: number) {

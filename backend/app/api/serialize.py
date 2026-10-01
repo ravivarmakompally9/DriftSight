@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from app.core.timebase import day_label, iso, label_ist, time_label
+from app.analysis.quantify import area_phrase, describe_position, pitches
 from app.detect.chips import CHIP
 from app.drift.particles import AFLOAT, BEACHED, LOST
 from app.scenario.elsa3 import PASSES, SKY_LABEL, sky
@@ -89,6 +90,9 @@ def detection_payload(run, d: dict, h: int | None = None, full: bool = False) ->
         "fdi": round(d["fdi"], 5),
         "track": d.get("track"),
         "status": status or "watch",
+        "where": describe_position(d["lon"], d["lat"]),
+        "area_phrase": area_phrase(d["area_m2"]),
+        "pitches": pitches(d["area_m2"]),
         "simulated": True,
     }
     if full:

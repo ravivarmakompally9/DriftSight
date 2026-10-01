@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Flag, Map as MapIcon, Plus, ScanSearch, Umbrella, X } from "lucide-react";
+import { Check, Flag, Map as MapIcon, Plus, Ruler, ScanSearch, Waves, X } from "lucide-react";
 
 import { ConfidenceChart } from "@/components/charts/ConfidenceChart";
 import { LandfallBars } from "@/components/charts/LandfallBars";
@@ -8,6 +8,7 @@ import { CreateMissionDialog } from "@/components/CreateMissionDialog";
 import { EmptyState, ErrorState } from "@/components/EmptyState";
 import { EventList } from "@/components/EventList";
 import { KpiCard } from "@/components/KpiCard";
+import { VerdictBanner } from "@/components/VerdictBanner";
 import { MapView } from "@/components/map/MapView";
 import { PassStrip } from "@/components/PassStrip";
 import { LevelPill } from "@/components/Pills";
@@ -46,28 +47,33 @@ export default function Overview() {
 
   return (
     <div className="grid gap-4">
+      <VerdictBanner headline={s?.headline} loading={summary.isLoading} />
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
         <KpiCard
-          icon={ScanSearch} tone="brand" label="AI detections" loading={summary.isLoading}
-          value={num(s?.detections)}
-          sub={`${s?.passes_done ?? 0} of ${s?.passes_total ?? 8} satellite passes`}
+          icon={Ruler} tone="crit" label="Plastic afloat" loading={summary.isLoading}
+          value={s ? `${num(s.plastic.confirmed_area_m2)} m²` : "—"}
+          sub={s ? (s.plastic.confirmed_fields
+            ? `${s.plastic.confirmed_fields} confirmed field${s.plastic.confirmed_fields === 1 ? "" : "s"} · ${s.plastic.confirmed_pitches} football pitches`
+            : "none confirmed yet") : undefined}
+        />
+        <KpiCard
+          icon={Waves} tone="warn" label="Coast affected" loading={summary.isLoading}
+          value={s ? `${s.coast.km.toFixed(0)} km` : "—"}
+          sub={s ? `${s.coast.district_count} district${s.coast.district_count === 1 ? "" : "s"} · ${s.coast.places.slice(0, 2).join(", ") || "none yet"}` : undefined}
         />
         <KpiCard
           icon={Check} tone="ok" label="Confirmed debris" loading={summary.isLoading}
           value={num(s?.confirmed)} sub="re-found where currents predicted"
         />
         <KpiCard
-          icon={X} tone="crit" label="Look-alikes rejected" loading={summary.isLoading}
+          icon={X} tone="violet" label="Look-alikes rejected" loading={summary.isLoading}
           value={num(s?.rejected)} sub="foam, glint — never sent to the field"
         />
         <KpiCard
-          icon={Umbrella} tone="warn" label="Pellets ashore" loading={summary.isLoading}
-          value={s ? `${s.pellets.ashore_pct}%` : "—"}
-          sub={s ? `forecast · of ${num(s.pellets.total)} simulated nurdles` : undefined}
-        />
-        <KpiCard
-          icon={Flag} tone="violet" label="High-priority zones" loading={summary.isLoading}
-          value={num(s?.high_priority)} sub={top ? `top: ${top.name}` : "none active"}
+          icon={ScanSearch} tone="brand" label="Satellite passes" loading={summary.isLoading}
+          value={s ? `${s.passes_done} / ${s.passes_total}` : "—"}
+          sub={s ? `${s.detections} candidate detections` : undefined}
         />
       </div>
 
@@ -170,9 +176,10 @@ export default function Overview() {
                   <b className="truncate">{top.name}</b>
                 </div>
                 <dl className="m-0 grid grid-cols-[minmax(110px,1fr)_auto] gap-x-4 gap-y-1.5 text-[13px]">
-                  <Row label="Location" value={latlon(top.lat, top.lon)} />
+                  <Row label="Where" value={top.where ?? latlon(top.lat, top.lon)} />
+                  {top.area_m2 ? <Row label="How much" value={`${num(top.area_m2)} m²`} /> : null}
                   <Row label="Confidence" value={pct(top.confidence)} />
-                  <Row label="Nearest harbour" value={top.nearest_harbour} />
+                  <Row label="Launch from" value={`${top.nearest_harbour} · ${top.harbour_km.toFixed(0)} km`} />
                 </dl>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="default" onClick={() => setMissionZone(top)}>

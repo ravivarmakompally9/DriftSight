@@ -82,8 +82,8 @@ export default function Detections() {
           <Table>
             <thead>
               <tr>
-                <Th>ID</Th><Th>Pass</Th><Th>Location</Th><Th numeric>Area</Th>
-                <Th>AI score</Th><Th>Track</Th><Th>Status</Th>
+                <Th>ID</Th><Th>Pass</Th><Th>Where</Th><Th numeric>How much</Th>
+                <Th>Plastic likelihood</Th><Th>Track</Th><Th>Verdict</Th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +91,10 @@ export default function Detections() {
                 <Tr key={d.id} clickable selected={d.id === currentId} onClick={() => setPicked(d.id)}>
                   <Td className="font-mono">{d.ref}</Td>
                   <Td>{d.as_of}</Td>
-                  <Td className="font-mono">{latlon(d.lat, d.lon)}</Td>
+                  <Td>
+                    <div>{d.where ?? latlon(d.lat, d.lon)}</div>
+                    <div className="font-mono text-[11px] text-ink-3">{latlon(d.lat, d.lon)}</div>
+                  </Td>
                   <Td numeric>{num(d.area_m2)} m²</Td>
                   <Td>
                     <div className="flex items-center gap-2">
@@ -140,7 +143,9 @@ export default function Detections() {
             )}
             <dl className="m-0 grid grid-cols-[minmax(110px,1fr)_auto] gap-x-4 gap-y-1.5 text-[13px]">
               <Row label="Sensor" value={detail.data.sensor} />
-              <Row label="AI score" value={pct(detail.data.score)} />
+              <Row label="Plastic likelihood" value={pct(detail.data.score)} />
+              <Row label="Where" value={detail.data.where ?? "—"} />
+              <Row label="How much" value={detail.data.area_phrase ?? `${num(detail.data.area_m2)} m²`} />
               <Row label="Pixels above 50%" value={`${detail.data.pixels} (${num(detail.data.area_m2)} m²)`} />
               <Row label="Mean FDI" value={detail.data.fdi.toFixed(3)} />
               <Row label="Linked track" value={detail.data.track ?? "—"} />

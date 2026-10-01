@@ -31,6 +31,9 @@ interface AppState {
   navOpen: boolean;
   /** Reverse-drift results, kept per track for the current session. */
   traces: Record<string, Backtrace>;
+  /** Operator's assumed spill mass in tonnes. null = not set, so no mass
+   *  figure is ever shown rather than one being invented. */
+  assumedTonnes: number | null;
 
   setHour: (h: number) => void;
   nudgeHour: (delta: number) => void;
@@ -44,6 +47,7 @@ interface AppState {
   setUser: (u: User | null) => void;
   setNavOpen: (o: boolean) => void;
   setTrace: (t: Backtrace) => void;
+  setAssumedTonnes: (t: number | null) => void;
   signOut: () => void;
 }
 
@@ -74,6 +78,7 @@ export const useAppStore = create<AppState>()(
       user: null,
       navOpen: false,
       traces: {},
+      assumedTonnes: null,
 
       setHour: (h) => set({ hour: clamp(Math.round(h), 0, HOURS) }),
       nudgeHour: (d) => set({ hour: clamp(get().hour + d, 0, HOURS) }),
@@ -87,12 +92,14 @@ export const useAppStore = create<AppState>()(
       setUser: (user) => set({ user }),
       setNavOpen: (navOpen) => set({ navOpen }),
       setTrace: (t) => set({ traces: { ...get().traces, [t.track]: t } }),
+      setAssumedTonnes: (assumedTonnes) => set({ assumedTonnes }),
       signOut: () => { tokenStore.set(null); set({ user: null }); },
     }),
     {
       name: "ds-app",
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ layers: s.layers, theme: s.theme, speed: s.speed, user: s.user }),
+      partialize: (s) => ({ layers: s.layers, theme: s.theme, speed: s.speed,
+                            user: s.user, assumedTonnes: s.assumedTonnes }),
       onRehydrateStorage: () => (state) => { if (state) applyTheme(state.theme); },
     },
   ),

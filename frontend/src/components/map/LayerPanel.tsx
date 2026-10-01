@@ -13,10 +13,11 @@ const LAYERS: { key: keyof LayerState; label: string; swatch: () => string }[] =
 ];
 
 const LEGEND = [
-  { label: "Confirmed debris", color: "--ok" },
-  { label: "Watching", color: "--warn" },
-  { label: "Rejected look-alike", color: "--crit" },
-  { label: "Came ashore", color: "--violet" },
+  { label: "Confirmed plastic", color: "--ok" },
+  { label: "Unconfirmed candidate", color: "--warn" },
+  { label: "Rejected — not plastic", color: "--crit" },
+  { label: "Washed ashore", color: "--violet" },
+  { label: "Forecast pellets", color: "--pellet" },
 ];
 
 export function LayerPanel() {
@@ -47,6 +48,11 @@ export function LayerPanel() {
           <b className="w-2.5 text-center text-crit">✕</b> MSC ELSA 3 wreck
         </span>
       </div>
+      <p className="mt-2.5 border-t border-line pt-2.5 text-[11.5px] leading-snug text-ink-3">
+        Rings are debris fields the detector flagged, coloured by whether a later pass
+        confirmed them. Orange dots are forecast pellet positions — nurdles are too
+        small to see from orbit, so they are modelled, never detected.
+      </p>
     </div>
   );
 }

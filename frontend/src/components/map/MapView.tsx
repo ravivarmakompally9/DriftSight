@@ -16,6 +16,8 @@ import { useAppStore, type LayerState, type Selection } from "@/store/useAppStor
 
 export interface MapViewProps {
   frame?: Frame;
+  /** Track id -> detector footprint in m², so the map can say how much. */
+  areaByTrack?: Record<string, number>;
   zones?: Zone[];
   detections?: Detection[];
   backtrace?: Backtrace | null;
@@ -29,7 +31,7 @@ export interface MapViewProps {
 const DETECTION_VISIBLE_HOURS = 20;
 
 export function MapView({
-  frame, zones = [], detections = [], backtrace, layers,
+  frame, areaByTrack, zones = [], detections = [], backtrace, layers,
   selection, onSelect, interactive = true, className,
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
@@ -285,6 +287,7 @@ export function MapView({
           if (!t.centroid) return null;
           const selected = selection?.type === "track" && selection.id === t.id;
           const c = statusColor(t.status);
+          const area = areaByTrack?.[t.id];
           return (
             <Marker key={t.id} longitude={t.centroid[0]} latitude={t.centroid[1]}
               onClick={() => onSelect?.({ type: "track", id: t.id })}>
@@ -297,8 +300,15 @@ export function MapView({
                   }}
                 />
                 {interactive && (
-                  <span className="font-display text-[12.5px] font-bold text-ink drop-shadow-[0_0_3px_var(--surface)]">
-                    {t.id.replace("Patch ", "")} · {pct(t.confidence)}
+                  <span className="whitespace-nowrap rounded px-1 py-0.5 text-[11.5px] font-semibold leading-tight text-ink"
+                        style={{ background: "color-mix(in srgb, var(--surface) 78%, transparent)" }}>
+                    <b className="font-display text-[12.5px]">{t.id.replace("Patch ", "")}</b>
+                    {" · "}
+                    {t.status === "confirmed" ? "confirmed plastic"
+                      : t.status === "rejected" ? "not plastic"
+                      : t.status === "landed" ? "ashore"
+                      : "unconfirmed"}
+                    {area ? ` · ${area.toLocaleString()} m²` : ""}
                   </span>
                 )}
               </button>

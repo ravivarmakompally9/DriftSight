@@ -1,4 +1,4 @@
-import { CheckCircle2, MapPin, Route, Umbrella, Waves } from "lucide-react";
+import { CheckCircle2, MapPin, Route, Scale, Umbrella, Waves } from "lucide-react";
 
 import { CumulativeLandfall } from "@/components/charts/CumulativeLandfall";
 import { ErrorState } from "@/components/EmptyState";
@@ -7,16 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, CardSub, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableWrap, Td, Th, Tr } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useForecast, useSummary } from "@/hooks/queries";
-import { dtIst } from "@/lib/time";
 import { num } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
 import { Row } from "@/components/TrackDetail";
 
 export default function Forecast() {
   const hour = useAppStore((s) => s.hour);
-  const forecast = useForecast();
+  const forecast = useForecast(hour);
   const summary = useSummary(hour);
+  const assumedTonnes = useAppStore((st) => st.assumedTonnes);
+  const setAssumedTonnes = useAppStore((st) => st.setAssumedTonnes);
 
   if (forecast.isError) {
     return <ErrorState message={(forecast.error as Error).message} retry={() => forecast.refetch()} />;
@@ -24,31 +27,72 @@ export default function Forecast() {
 
   const f = forecast.data;
   const s = summary.data;
-  const reached = (f?.districts ?? []).filter((d) => d.first_hour !== null && d.first_hour <= hour).length;
   const v = f?.validation;
 
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <KpiCard
-          icon={Waves} tone="brand" label="Virtual pellets released" loading={forecast.isLoading}
-          value={num(f?.nurdles)} sub="at the wreck, first 12 hours"
+          icon={Waves} tone="crit" label="Coast affected" loading={forecast.isLoading}
+          value={f?.coast ? `${f.coast.km.toFixed(0)} km` : "—"}
+          sub={f?.coast ? `${f.coast.district_count} district${f.coast.district_count === 1 ? "" : "s"} · ${f.coast.places.slice(0, 2).join(", ") || "none yet"}` : undefined}
         />
         <KpiCard
-          icon={Umbrella} tone="warn" label="Ashore by now" loading={summary.isLoading}
+          icon={MapPin} tone="warn" label="Worst-hit stretch" loading={forecast.isLoading}
+          value={f?.districts?.[0]?.district ?? "—"}
+          sub={f?.districts?.[0] ? `${f.districts[0].coast_km?.toFixed(0) ?? "—"} km · first pellets ${f.districts[0].first_at ?? "—"}` : undefined}
+        />
+        <KpiCard
+          icon={Umbrella} tone="violet" label="Ashore by now" loading={summary.isLoading}
           value={s ? `${s.pellets.ashore_pct}%` : "—"}
-          sub={s ? `${num(s.pellets.ashore)} pellets · ${dtIst(hour)}` : undefined}
+          sub={s ? `${num(s.pellets.ashore)} of ${num(s.pellets.total)} modelled pellets` : undefined}
         />
         <KpiCard
-          icon={Route} tone="violet" label="Still afloat" loading={summary.isLoading}
-          value={s ? `${s.pellets.afloat_pct}%` : "—"} sub="still moving; can still reach new coast"
-        />
-        <KpiCard
-          icon={MapPin} tone="ok" label="Districts reached" loading={forecast.isLoading}
-          value={reached}
-          sub={v ? `${v.reported_districts_hit} of ${v.reported_districts_total} reported districts in the 14-day forecast` : undefined}
+          icon={Route} tone="brand" label="Still afloat" loading={summary.isLoading}
+          value={s ? `${s.pellets.afloat_pct}%` : "—"}
+          sub="still moving; can still reach new coast"
         />
       </div>
+
+      {/* Mass is the one figure nothing in the model constrains, so it is an
+          operator input, shown as one, and absent until it is supplied. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Scale size={15} className="text-ink-3" />Scale to a release estimate</CardTitle>
+          <CardSub>optional · nothing we observe measures spill mass</CardSub>
+        </CardHeader>
+        <CardBody className="flex flex-wrap items-end gap-5">
+          <div className="grid gap-1.5">
+            <Label htmlFor="tonnes">Assumed nurdles released (tonnes)</Label>
+            <Input
+              id="tonnes" type="number" min={0} step={5} className="w-44"
+              placeholder="not set"
+              value={assumedTonnes ?? ""}
+              onChange={(e) => setAssumedTonnes(e.target.value === "" ? null : Number(e.target.value))}
+            />
+          </div>
+          {f?.mass ? (
+            <>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-ink-3">Est. ashore by now</div>
+                <div className="font-display text-[26px] font-bold leading-none tnum">{f.mass.ashore_tonnes} t</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-ink-3">Est. still afloat</div>
+                <div className="font-display text-[26px] font-bold leading-none tnum">{f.mass.afloat_tonnes} t</div>
+              </div>
+              <p className="max-w-md text-[12px] italic leading-relaxed text-warn">{f.mass.note}</p>
+            </>
+          ) : (
+            <p className="max-w-lg text-[12.5px] leading-relaxed text-ink-3">
+              Enter a figure and every pellet percentage on this page converts to mass.
+              DriftSight will not guess one: imagery and drift tell you <em>where</em> and{" "}
+              <em>how far</em>, never <em>how much</em> was spilled. Area afloat and
+              kilometres of coast above need no such assumption.
+            </p>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -67,14 +111,15 @@ export default function Forecast() {
             <Table>
               <thead>
                 <tr>
-                  <Th>District</Th><Th numeric>Forecast share</Th><Th>First arrival</Th>
-                  <Th>Half arrived by</Th><Th>Reported ashore</Th>
+                  <Th>District</Th><Th numeric>Coast hit</Th><Th numeric>Share of pellets</Th>
+                  <Th>First arrival</Th><Th>Half arrived by</Th><Th>Reported ashore</Th>
                 </tr>
               </thead>
               <tbody>
                 {(f?.districts ?? []).map((d) => (
                   <Tr key={d.district}>
                     <Td><b>{d.district}</b></Td>
+                    <Td numeric>{d.coast_km ? `${d.coast_km.toFixed(0)} km` : "—"}</Td>
                     <Td numeric>{d.share_pct.toFixed(1)}%</Td>
                     <Td className="font-mono">{d.first_at ?? "—"}</Td>
                     <Td className="font-mono">{d.median_at ?? "—"}</Td>
