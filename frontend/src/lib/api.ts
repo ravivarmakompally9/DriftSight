@@ -1,5 +1,5 @@
 import type {
-  Backtrace, CurrentField, Detection, FieldResults, ForecastReport, Frame, GeoFurniture,
+  Backtrace, CurrentField, Timeline, Detection, FieldResults, ForecastReport, Frame, GeoFurniture,
   Incident, Mission, MissionStatus, ModelReport, RunInfo, RunSummary, SatellitePass,
   SitRep, TokenResponse, Track, UploadResult, Zone, DemoAccount, DriftEvent,
 } from "./types";
@@ -87,6 +87,7 @@ export const api = {
     request<{ zones: Zone[] }>(`/runs/${runId}/priorities${qs({ h })}`),
   events: (runId: number | "latest", until: number) =>
     request<{ events: DriftEvent[]; count: number }>(`/runs/${runId}/events${qs({ until })}`),
+  timeline: (runId: number | "latest") => request<Timeline>(`/runs/${runId}/timeline`),
   currents: (h: number, bbox: string, nx = 20, ny = 20) =>
     request<CurrentField>(`/currents${qs({ h, bbox, nx, ny })}`),
 

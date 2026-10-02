@@ -35,24 +35,30 @@ export function VerdictBanner({ headline, loading }: { headline?: Headline; load
 
   return (
     <section
-      className="card-surface flex overflow-hidden"
+      className={cn("card-surface flex overflow-hidden", headline.found ? "glow-crit" : undefined)}
       aria-label="Current assessment"
     >
-      <div className={cn("w-1.5 shrink-0", tone.bar)} aria-hidden />
-      <div className="min-w-0 flex-1 p-4">
+      <div className={cn("w-1 shrink-0", tone.bar)} aria-hidden />
+      <div className="min-w-0 flex-1 p-5">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold", tone.chip)}>
+            <span className="relative flex h-1.5 w-1.5">
+              {headline.found && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-70" />
+              )}
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
+            </span>
             <Icon size={13} />
             {headline.verdict}
           </span>
           <span className="font-mono text-[12px] text-ink-3">as of {headline.as_of}</span>
         </div>
 
-        <p className="mt-2 max-w-4xl text-[16px] leading-relaxed text-ink">
+        <p className="mt-2.5 max-w-4xl text-[17px] leading-relaxed tracking-[-0.01em] text-ink">
           {headline.sentence}
         </p>
 
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+        <div className="mt-4 flex flex-wrap gap-x-7 gap-y-3 border-t border-line pt-3.5 text-[13px]">
           <Fact
             icon={Ruler}
             label="Plastic afloat"
@@ -101,7 +107,7 @@ function Fact({
         <Icon size={11} />
         {label}
       </div>
-      <div className="mt-0.5 font-semibold tnum">{value}</div>
+      <div className="mt-1 text-[15px] font-semibold leading-tight tnum">{value}</div>
       {sub && (
         <div className={cn("text-[11.5px]", assumption ? "italic text-warn" : "text-ink-3")}>{sub}</div>
       )}

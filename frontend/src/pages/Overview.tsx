@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Check, Flag, Map as MapIcon, Plus, Ruler, ScanSearch, Waves, X } from "lucide-react";
 
 import { ConfidenceChart } from "@/components/charts/ConfidenceChart";
-import { LandfallBars } from "@/components/charts/LandfallBars";
 import { CreateMissionDialog } from "@/components/CreateMissionDialog";
 import { EmptyState, ErrorState } from "@/components/EmptyState";
 import { EventList } from "@/components/EventList";
@@ -17,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardActions, CardBody, CardHeader, CardSub, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useDetections, useEvents, useForecast, useFrame, usePriorities, useSummary, useTracks,
+  useDetections, useEvents, useFrame, usePriorities, useSummary, useTimeline, useTracks,
 } from "@/hooks/queries";
 import { dtIst } from "@/lib/time";
 import type { Zone } from "@/lib/types";
@@ -35,11 +34,15 @@ export default function Overview() {
   const zones = usePriorities(hour);
   const events = useEvents(hour);
   const tracks = useTracks(hour);
-  const forecast = useForecast();
+  const timeline = useTimeline();
   const detections = useDetections(hour);
 
   const s = summary.data;
   const top = zones.data?.[0];
+  // sparklines show only the elapsed part of the replay — a KPI must never
+  // quietly reveal the future
+  const past = (timeline.data?.series ?? []).filter((p) => p.h <= hour);
+  const d = s?.delta;
 
   if (summary.isError) {
     return <ErrorState message={(summary.error as Error).message} retry={() => summary.refetch()} />;
@@ -53,6 +56,11 @@ export default function Overview() {
         <KpiCard
           icon={Ruler} tone="crit" label="Plastic afloat" loading={summary.isLoading}
           value={s ? `${num(s.plastic.confirmed_area_m2)} m²` : "—"}
+          spark={past.map((p) => p.plastic_m2)}
+          delta={d?.at_last_pass ? {
+            value: d.at_last_pass.plastic_m2, label: d.at_last_pass.label,
+            format: (v) => `${num(v)} m²`, riseIsBad: true,
+          } : null}
           sub={s ? (s.plastic.confirmed_fields
             ? `${s.plastic.confirmed_fields} confirmed field${s.plastic.confirmed_fields === 1 ? "" : "s"} · ${s.plastic.confirmed_pitches} football pitches`
             : "none confirmed yet") : undefined}
@@ -60,11 +68,21 @@ export default function Overview() {
         <KpiCard
           icon={Waves} tone="warn" label="Coast affected" loading={summary.isLoading}
           value={s ? `${s.coast.km.toFixed(0)} km` : "—"}
+          spark={past.map((p) => p.coast_km)}
+          delta={d?.last_24h ? {
+            value: d.last_24h.coast_km, label: d.last_24h.label,
+            format: (v) => `${v.toFixed(1)} km`, riseIsBad: true,
+          } : null}
           sub={s ? `${s.coast.district_count} district${s.coast.district_count === 1 ? "" : "s"} · ${s.coast.places.slice(0, 2).join(", ") || "none yet"}` : undefined}
         />
         <KpiCard
-          icon={Check} tone="ok" label="Confirmed debris" loading={summary.isLoading}
-          value={num(s?.confirmed)} sub="re-found where currents predicted"
+          icon={Check} tone="ok" label="Confirmed fields" loading={summary.isLoading}
+          value={num(s?.confirmed)}
+          spark={past.map((p) => p.confirmed)}
+          delta={d?.at_last_pass ? {
+            value: d.at_last_pass.confirmed_fields, label: d.at_last_pass.label, riseIsBad: true,
+          } : null}
+          sub="re-found where the currents predicted"
         />
         <KpiCard
           icon={X} tone="violet" label="Look-alikes rejected" loading={summary.isLoading}
@@ -115,45 +133,24 @@ export default function Overview() {
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Confidence per tracked patch</CardTitle>
-            <CardSub>
-              confirmed ≥ {pct(s?.params.confirm ?? 0.8)} · rejected below {pct(s?.params.reject ?? 0.25)}
-            </CardSub>
-          </CardHeader>
-          <CardBody>
-            {tracks.isLoading ? (
-              <Skeleton className="h-[240px]" />
-            ) : tracks.data?.length ? (
-              <ConfidenceChart tracks={tracks.data} hour={hour} />
-            ) : (
-              <EmptyState icon={ScanSearch} title="No patches detected yet"
-                hint="The first clear satellite pass is 27 May, 11:00 IST." />
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Pellet landfall forecast by district</CardTitle>
-            <CardSub>share of simulated nurdles, 14 days</CardSub>
-          </CardHeader>
-          <CardBody>
-            {forecast.isLoading ? (
-              <Skeleton className="h-[240px]" />
-            ) : (
-              <>
-                <LandfallBars districts={forecast.data?.districts ?? []} />
-                <p className="mt-2 text-xs text-ink-3">
-                  ✓ district where pellets or containers were reported ashore. Coloured bars = reported districts.
-                </p>
-              </>
-            )}
-          </CardBody>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Confidence per tracked patch</CardTitle>
+          <CardSub>
+            every step is a satellite pass · confirmed ≥ {pct(s?.params.confirm ?? 0.8)} · rejected below {pct(s?.params.reject ?? 0.25)}
+          </CardSub>
+        </CardHeader>
+        <CardBody>
+          {tracks.isLoading ? (
+            <Skeleton className="h-[240px]" />
+          ) : tracks.data?.length ? (
+            <ConfidenceChart tracks={tracks.data} hour={hour} />
+          ) : (
+            <EmptyState icon={ScanSearch} title="No patches detected yet"
+              hint="The first clear satellite pass is 27 May, 11:00 IST." />
+          )}
+        </CardBody>
+      </Card>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">

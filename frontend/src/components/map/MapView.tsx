@@ -283,11 +283,12 @@ export function MapView({
         ))}
 
         {/* tracked patch centroids */}
-        {layers.tracks && frame?.tracks.map((t) => {
+        {layers.tracks && frame?.tracks.map((t, i) => {
           if (!t.centroid) return null;
           const selected = selection?.type === "track" && selection.id === t.id;
           const c = statusColor(t.status);
           const area = areaByTrack?.[t.id];
+          const settled = t.status === "rejected" || t.status === "landed";
           return (
             <Marker key={t.id} longitude={t.centroid[0]} latitude={t.centroid[1]}
               onClick={() => onSelect?.({ type: "track", id: t.id })}>
@@ -300,15 +301,27 @@ export function MapView({
                   }}
                 />
                 {interactive && (
-                  <span className="whitespace-nowrap rounded px-1 py-0.5 text-[11.5px] font-semibold leading-tight text-ink"
-                        style={{ background: "color-mix(in srgb, var(--surface) 78%, transparent)" }}>
+                  /* Settled verdicts earn a letter, not a sentence: once a patch
+                     is rejected its area is no longer standing information, and
+                     dropping it stops three labels stacking on one another. */
+                  <span className="whitespace-nowrap rounded px-1.5 py-0.5 text-[11.5px] font-semibold leading-tight shadow-card"
+                        style={{
+                          background: "color-mix(in srgb, var(--surface) 88%, transparent)",
+                          transform: `translateY(${(i % 3) * 14 - 14}px)`,
+                          color: settled ? "var(--text-3)" : "var(--text)",
+                        }}>
                     <b className="font-display text-[12.5px]">{t.id.replace("Patch ", "")}</b>
-                    {" · "}
-                    {t.status === "confirmed" ? "confirmed plastic"
-                      : t.status === "rejected" ? "not plastic"
-                      : t.status === "landed" ? "ashore"
-                      : "unconfirmed"}
-                    {area ? ` · ${area.toLocaleString()} m²` : ""}
+                    {settled ? (
+                      <span className="ml-1 opacity-80">
+                        {t.status === "rejected" ? "not plastic" : "ashore"}
+                      </span>
+                    ) : (
+                      <>
+                        {" · "}
+                        {t.status === "confirmed" ? "confirmed plastic" : "unconfirmed"}
+                        {area ? ` · ${area.toLocaleString()} m²` : ""}
+                      </>
+                    )}
                   </span>
                 )}
               </button>

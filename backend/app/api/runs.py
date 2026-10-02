@@ -13,7 +13,7 @@ from app.analysis.quantify import (
 from app.core.config import settings
 from app.core.security import User, optional_user
 from app.core.timebase import HOURS, iso, label_ist
-from app.scenario.elsa3 import PASSES, RunParams
+from app.scenario.elsa3 import PASSES, RunParams, sky
 from app.scenario.store import create_run, latest_run, list_runs
 
 router = APIRouter(tags=["runs"])
@@ -75,8 +75,32 @@ def get_summary(run_id: str, h: int | None = HourQuery,
               for s in ("confirmed", "watch", "rejected", "landed")}
     dets = [d for d in run.detections if d["h"] <= hh]
     assumed = settings.assumed_release_tonnes if tonnes is None else tonnes
+
+    # A number with no direction of travel is half a number. Detection figures
+    # can only move when a satellite looks, so they are compared across the most
+    # recent pass; landfall is continuous, so it is compared over 24 hours.
+    last_pass = max((p for p in PASSES if p["h"] <= hh), key=lambda p: p["h"], default=None)
+    delta = {"at_last_pass": None, "last_24h": None}
+    if last_pass is not None and last_pass["h"] >= 1:
+        before = plastic_afloat(run, last_pass["h"] - 1)
+        now = plastic_afloat(run, hh)
+        delta["at_last_pass"] = {
+            "label": f"at the {last_pass['label']} pass",
+            "plastic_m2": now["confirmed_area_m2"] - before["confirmed_area_m2"],
+            "confirmed_fields": now["confirmed_fields"] - before["confirmed_fields"],
+        }
+    if hh >= 24:
+        was = coast_affected(run, hh - 24)
+        now_c = coast_affected(run, hh)
+        delta["last_24h"] = {
+            "label": "in the last 24 h",
+            "coast_km": round(now_c["km"] - was["km"], 1),
+            "districts": now_c["district_count"] - was["district_count"],
+        }
+
     return {
         "run_id": run.id,
+        "delta": delta,
         "h": hh,
         "at": iso(hh),
         "as_of": label_ist(hh),
@@ -172,3 +196,33 @@ def get_events(run_id: str,
     rows = [dict(e, at=iso(e["h"]), as_of=label_ist(e["h"]))
             for e in run.events if e["h"] <= hh]
     return {"run_id": run.id, "until": hh, "count": len(rows), "events": rows[-limit:]}
+
+
+@router.get("/runs/{run_id}/timeline", summary="Replay timeline as a readable series")
+def get_timeline(run_id: str, step: int = Query(3, ge=1, le=24)) -> dict:
+    """A scrubber that is only a slider wastes the most informative axis in the
+    product. This is the shape of the incident over the 14 days -- how much is
+    ashore, how much is still afloat, and what was confirmed when -- so the
+    timeline can be read before anybody presses play."""
+    run = require_run(run_id)
+    total = run.metrics["nurdles"] or 1
+    series = []
+    for hh in range(0, HOURS + 1, step):
+        fr = run.frame(hh)
+        ashore = int((fr.nurdle_state == 1).sum())
+        afloat = int((fr.nurdle_state == 0).sum())
+        plastic = plastic_afloat(run, hh)
+        series.append({
+            "h": hh,
+            "ashore_pct": round(ashore / total * 100, 2),
+            "afloat_pct": round(afloat / total * 100, 2),
+            "confirmed": sum(1 for s in fr.track_status if s == "confirmed"),
+            "coast_km": coast_affected(run, hh)["km"],
+            "plastic_m2": plastic["confirmed_area_m2"],
+        })
+    return {
+        "run_id": run.id, "step": step, "hours": HOURS, "series": series,
+        "passes": [{"h": p["h"], "label": p["label"], "sky": sky(p),
+                    "detections": sum(1 for d in run.detections if d["h"] == p["h"])}
+                   for p in PASSES],
+    }

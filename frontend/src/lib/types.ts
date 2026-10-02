@@ -80,8 +80,13 @@ export interface Zone {
   coast_km?: number; area_m2?: number; share?: number;
   where?: string; pitches?: number;
 }
+export interface SummaryDelta {
+  at_last_pass: { label: string; plastic_m2: number; confirmed_fields: number } | null;
+  last_24h: { label: string; coast_km: number; districts: number } | null;
+}
 export interface RunSummary {
   run_id: number; h: number; at: string; as_of: string; hours: number;
+  delta: SummaryDelta;
   headline: Headline; plastic: PlasticAfloat; coast: CoastAffected;
   detections: number; detections_total: number; passes_done: number; passes_total: number;
   confirmed: number; watching: number; rejected: number; landed: number;
@@ -216,4 +221,14 @@ export interface UploadResult {
     centre: { x: number; y: number } }[];
   probability_preview: { width: number; height: number; values: number[] };
   note: string;
+}
+
+export interface TimelinePoint {
+  h: number; ashore_pct: number; afloat_pct: number; confirmed: number;
+  coast_km: number; plastic_m2: number;
+}
+export interface Timeline {
+  run_id: number; step: number; hours: number;
+  series: TimelinePoint[];
+  passes: { h: number; label: string; sky: "clear" | "cloud" | "partial"; detections: number }[];
 }

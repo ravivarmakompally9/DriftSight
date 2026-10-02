@@ -28,11 +28,11 @@ const config: Config = {
         sans: ["Figtree", "Segoe UI", "system-ui", "sans-serif"],
         mono: ["IBM Plex Mono", "ui-monospace", "Menlo", "monospace"],
       },
-      borderRadius: { xl: "12px", lg: "10px", md: "8px", sm: "6px" },
+      borderRadius: { "2xl": "18px", xl: "14px", lg: "10px", md: "8px", sm: "6px" },
       boxShadow: {
-        card: "0 1px 2px rgb(14 26 43 / 0.06), 0 4px 16px rgb(14 26 43 / 0.05)",
-        float: "0 8px 30px rgb(14 26 43 / 0.12)",
-        modal: "0 20px 60px rgb(0 0 0 / 0.3)",
+        card: "var(--shadow-card)",
+        float: "var(--shadow-float)",
+        modal: "0 24px 70px -12px rgb(0 0 0 / 0.45)",
       },
       keyframes: {
         slide: { "0%": { transform: "translateX(-100%)" }, "100%": { transform: "translateX(260%)" } },

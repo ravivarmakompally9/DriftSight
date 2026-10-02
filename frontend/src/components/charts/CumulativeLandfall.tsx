@@ -1,5 +1,6 @@
 import {
-  CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
 } from "recharts";
 
 import { axisProps, tooltipStyle, useChartTheme } from "@/components/charts/theme";
@@ -20,7 +21,15 @@ export function CumulativeLandfall({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 6, right: 12, left: -16, bottom: 0 }}>
+      <ComposedChart data={data} margin={{ top: 6, right: 12, left: -16, bottom: 0 }}>
+        <defs>
+          {series.map((d, i) => (
+            <linearGradient key={d.district} id={`fill-${i}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={seriesColor(i)} stopOpacity={0.22} />
+              <stop offset="100%" stopColor={seriesColor(i)} stopOpacity={0} />
+            </linearGradient>
+          ))}
+        </defs>
         <CartesianGrid stroke={t.grid} vertical={false} />
         <XAxis
           dataKey="h" type="number" domain={[0, HOURS]} ticks={[0, 48, 96, 144, 192, 240, 288, 336]}
@@ -34,10 +43,14 @@ export function CumulativeLandfall({
           label={{ value: "now", position: "top", fill: t.crit, fontSize: 11 }}
         />
         {series.map((d, i) => (
+          <Area key={`a-${d.district}`} type="monotone" dataKey={d.district} stroke="none"
+            fill={`url(#fill-${i})`} isAnimationActive={false} legendType="none" />
+        ))}
+        {series.map((d, i) => (
           <Line key={d.district} type="monotone" dataKey={d.district} stroke={seriesColor(i)}
             strokeWidth={2} dot={false} isAnimationActive={false} />
         ))}
-      </LineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

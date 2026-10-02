@@ -104,6 +104,11 @@ export function useSitrep(hour: number) {
   return useQuery({ queryKey: ["sitrep", runId, hour], queryFn: () => api.sitrep(runId, hour), ...DERIVED });
 }
 
+export function useTimeline() {
+  const runId = useRunId();
+  return useQuery({ queryKey: ["timeline", runId], queryFn: () => api.timeline(runId), ...DERIVED });
+}
+
 export function useCurrents(hour: number, bbox: string, enabled: boolean) {
   return useQuery({
     queryKey: ["currents", hour, bbox],
