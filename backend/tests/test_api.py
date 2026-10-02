@@ -60,11 +60,30 @@ def test_frame_hides_truth_unless_asked(client):
     assert "truth" in client.get("/api/runs/latest/frame/200", params={"truth": 1}).json()
 
 
-def test_detection_detail_carries_the_chip(client):
+def test_detection_detail_carries_previews_not_raw_pixels(client):
+    """The console renders from the PNG previews, so the 36 KB of per-pixel
+    arrays must not ride along on every click."""
     d = client.get("/api/detections/0").json()
+    assert d["thumb"].startswith("data:image/png;base64,")
+    assert d["thumb_probability"].startswith("data:image/png;base64,")
+    assert len(d["spectrum"]["detected"]) == 6
+    assert "bands" not in d["chip"]
+    assert len(client.get("/api/detections/0").content) < 8000
+
+
+def test_raw_chip_pixels_are_available_on_request(client):
+    d = client.get("/api/detections/0", params={"bands": 1}).json()
     assert len(d["chip"]["bands"]) == 6
     assert len(d["chip"]["probability"]) == 24 * 24
-    assert len(d["spectrum"]["detected"]) == 6
+    assert len(d["chip"]["classes"]) == 24 * 24
+
+
+def test_detection_says_what_became_of_it(client):
+    """A detection on its own is a guess; the verdict came at a later pass."""
+    d = client.get("/api/detections/0").json()
+    assert d["outcome"]["track"]
+    assert d["outcome"]["status"] in ("confirmed", "watch", "rejected", "landed")
+    assert d["outcome"]["text"]
 
 
 def test_track_detail_and_backtrace(client):

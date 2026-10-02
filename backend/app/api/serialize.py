@@ -69,7 +69,8 @@ def frame_payload(run, h: int, truth: bool = False) -> dict:
     return out
 
 
-def detection_payload(run, d: dict, h: int | None = None, full: bool = False) -> dict:
+def detection_payload(run, d: dict, h: int | None = None, full: bool = False,
+                      bands: bool = False) -> dict:
     status = None
     if d.get("track"):
         fr = run.frame(h if h is not None else run.frames[-1].h)
@@ -125,12 +126,16 @@ def detection_payload(run, d: dict, h: int | None = None, full: bool = False) ->
             "size": CHIP,
             "pixel_m": 10,
             "extent_m": CHIP * 10,
-            "bands": chip.band_lists(),
             "band_names": ["B2", "B3", "B4", "B6", "B8", "B11"],
-            "probability": [round(float(v), 4) for v in chip.prob],
-            "classes": [int(v) for v in chip.cls],
             "source": "synthetic",
         }
+        # The full per-pixel arrays are ~36 KB and the console renders from the
+        # PNG previews instead, so they are opt-in: available to anyone pulling
+        # pixels out of the API, not paid for on every click in the UI.
+        if bands:
+            out["chip"]["bands"] = chip.band_lists()
+            out["chip"]["probability"] = [round(float(v), 4) for v in chip.prob]
+            out["chip"]["classes"] = [int(v) for v in chip.cls]
         out["spectrum"] = _spectrum(chip)
     return out
 

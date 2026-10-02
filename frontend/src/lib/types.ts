@@ -108,7 +108,9 @@ export interface Frame {
 
 export interface ChipData {
   size: number; pixel_m: number; extent_m: number;
-  bands: number[][]; band_names: string[]; probability: number[]; classes: number[]; source: string;
+  band_names: string[]; source: string;
+  /** Only present when the detail is requested with `bands=1`. */
+  bands?: number[][]; probability?: number[]; classes?: number[];
 }
 export interface Detection {
   id: number; ref: string; h: number; at: string; as_of: string; pass: string; sensor: string;

@@ -12,13 +12,17 @@ MAX_UPLOAD_BYTES = 40 * 1024 * 1024
 
 
 @router.get("/detections/{det_id}", summary="One detection with its image chip")
-def get_detection(det_id: int, run_id: str = Query("latest")) -> dict:
-    """Includes the six band rasters, the probability map, the mean spectrum of
-    the detected pixels, the FDI and the track it was associated with."""
+def get_detection(det_id: int, run_id: str = Query("latest"),
+                  bands: int = Query(0, ge=0, le=1,
+                                     description="1 also returns the per-pixel band, "
+                                                 "probability and class arrays (~36 KB)")) -> dict:
+    """PNG previews of the chip, the mean spectrum of the detected pixels, the
+    FDI, the linked track and what became of it. Pass `bands=1` for the full
+    per-pixel rasters."""
     run = require_run(run_id)
     if det_id < 0 or det_id >= len(run.detections):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"No detection {det_id}")
-    return detection_payload(run, run.detections[det_id], full=True)
+    return detection_payload(run, run.detections[det_id], full=True, bands=bool(bands))
 
 
 @router.post("/detect/upload", summary="Run the detector on an uploaded GeoTIFF")
