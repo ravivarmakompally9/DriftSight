@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 
@@ -17,6 +17,9 @@ const Forecast = lazy(() => import("@/pages/Forecast"));
 const Missions = lazy(() => import("@/pages/Missions"));
 const Report = lazy(() => import("@/pages/Report"));
 const DataModels = lazy(() => import("@/pages/DataModels"));
+
+/** GitHub Pages cannot rewrite deep links to index.html, so the static build routes on the hash. */
+const Router = import.meta.env.VITE_STATIC ? HashRouter : BrowserRouter;
 
 const queryClient = new QueryClient({
   defaultOptions: {

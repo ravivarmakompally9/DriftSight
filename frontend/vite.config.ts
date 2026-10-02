@@ -8,6 +8,8 @@ const API_PROXY = {
 };
 
 export default defineConfig({
+  // The static build is served from a sub-path (https://<user>.github.io/DriftSight/).
+  base: process.env.VITE_BASE ?? "/",
   plugins: [react()],
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
   server: {

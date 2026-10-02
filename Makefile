@@ -13,7 +13,7 @@ PYTHON ?= $(shell command -v python3.11 || command -v python3.12 || command -v p
 
 .DEFAULT_GOAL := help
 .PHONY: help install install-backend install-frontend dev dev-backend dev-frontend \
-        test test-backend test-frontend build lint clean docker docker-down reset-db
+        test test-backend test-frontend build pages lint clean docker docker-down reset-db
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -57,6 +57,14 @@ test-frontend: ## TypeScript type-check
 
 build: ## Production build of the console
 	@cd $(FRONTEND) && npm run build
+
+pages: ## Build the backend-free demo and publish it to GitHub Pages (gh-pages branch)
+	@cd $(FRONTEND) && npm run build:static
+	@touch $(FRONTEND)/dist/.nojekyll
+	@cd $(FRONTEND)/dist && rm -rf .git && git init -q -b gh-pages && git add -A \
+		&& git commit -q -m "Deploy DriftSight static demo" \
+		&& git push -f -q $$(git -C ../.. remote get-url origin) gh-pages && rm -rf .git
+	@echo "published to the gh-pages branch"
 
 clean: ## Remove build output, caches and the local database
 	@rm -rf $(FRONTEND)/dist $(FRONTEND)/node_modules/.vite

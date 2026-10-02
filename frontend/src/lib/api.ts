@@ -3,6 +3,7 @@ import type {
   Incident, Mission, MissionStatus, ModelReport, RunInfo, RunSummary, SatellitePass,
   SitRep, TokenResponse, Track, UploadResult, Zone, DemoAccount, DriftEvent,
 } from "./types";
+import { createStaticApi } from "./staticApi";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 const TOKEN_KEY = "ds-token";
@@ -51,7 +52,7 @@ const qs = (params: Record<string, string | number | boolean | undefined>) => {
   return s ? `?${s}` : "";
 };
 
-export const api = {
+const liveApi = {
   // auth
   login: (email: string, password: string) =>
     request<TokenResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -114,3 +115,8 @@ export const api = {
   sitrepPdfUrl: (runId: number | "latest", h: number) =>
     `${BASE}/reports/sitrep${qs({ run_id: runId, h, format: "pdf" })}`,
 };
+
+export type Api = typeof liveApi;
+
+/** The GitHub Pages build has no backend: it reads exported JSON instead. */
+export const api: Api = import.meta.env.VITE_STATIC ? createStaticApi() : liveApi;
