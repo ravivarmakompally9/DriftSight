@@ -1,0 +1,87 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "incident": "MSC ELSA 3",
+    "issued": "1 Jun, 07:00 IST",
+    "run_id": 2,
+    "source": "DriftSight prototype \u2014 simulated imagery and ocean fields"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.9524,
+          8.1487
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch A (at sea)",
+        "level": "HIGH",
+        "confidence": 0.92,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.4268,
+          7.8976
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch C (at sea)",
+        "level": "HIGH",
+        "confidence": 0.94,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.9209,
+          7.8415
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch B (at sea)",
+        "level": "LOW",
+        "confidence": 0.76,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.5028,
+          7.7602
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch D (at sea)",
+        "level": "LOW",
+        "confidence": 0.55,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    }
+  ]
+}

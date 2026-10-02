@@ -1,0 +1,125 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "incident": "MSC ELSA 3",
+    "issued": "28 May, 14:00 IST",
+    "run_id": 2,
+    "source": "DriftSight prototype \u2014 simulated imagery and ocean fields"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.2053,
+          8.2107
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Kanyakumari coast",
+        "level": "HIGH",
+        "confidence": 0.95,
+        "zone_kind": "coast",
+        "action": "Beach survey and manual pellet collection; alert fishing villages.",
+        "nearest_harbour": "Colachel"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8991,
+          8.4944
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Thiruvananthapuram coast",
+        "level": "HIGH",
+        "confidence": 0.95,
+        "zone_kind": "coast",
+        "action": "Beach survey and manual pellet collection; alert fishing villages.",
+        "nearest_harbour": "Vizhinjam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7927,
+          8.4513
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch A (at sea)",
+        "level": "MEDIUM",
+        "confidence": 0.64,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Vizhinjam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5222,
+          8.5588
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch C (at sea)",
+        "level": "MEDIUM",
+        "confidence": 0.63,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Neendakara"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.653,
+          8.7975
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Kollam coast",
+        "level": "LOW",
+        "confidence": 0.54,
+        "zone_kind": "coast",
+        "action": "Beach survey and manual pellet collection; alert fishing villages.",
+        "nearest_harbour": "Neendakara"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8175,
+          8.1679
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch B (at sea)",
+        "level": "LOW",
+        "confidence": 0.46,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Vizhinjam"
+      }
+    }
+  ]
+}

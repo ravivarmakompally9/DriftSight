@@ -1,0 +1,49 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "incident": "MSC ELSA 3",
+    "issued": "7 Jun, 19:00 IST",
+    "run_id": 2,
+    "source": "DriftSight prototype \u2014 simulated imagery and ocean fields"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.9266,
+          8.7991
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch C (at sea)",
+        "level": "HIGH",
+        "confidence": 0.95,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Pamban"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          79.4664,
+          9.0681
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch A (at sea)",
+        "level": "HIGH",
+        "confidence": 0.99,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Pamban"
+      }
+    }
+  ]
+}

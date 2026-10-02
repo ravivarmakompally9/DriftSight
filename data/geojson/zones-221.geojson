@@ -1,0 +1,68 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "incident": "MSC ELSA 3",
+    "issued": "3 Jun, 05:00 IST",
+    "run_id": 2,
+    "source": "DriftSight prototype \u2014 simulated imagery and ocean fields"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.4663,
+          8.6515
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch A (at sea)",
+        "level": "HIGH",
+        "confidence": 0.99,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Thoothukudi"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.9509,
+          7.957
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch C (at sea)",
+        "level": "HIGH",
+        "confidence": 0.99,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.2601,
+          8.0958
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch B (at sea)",
+        "level": "LOW",
+        "confidence": 0.42,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Thoothukudi"
+      }
+    }
+  ]
+}

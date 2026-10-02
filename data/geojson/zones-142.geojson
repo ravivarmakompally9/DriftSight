@@ -1,0 +1,106 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "incident": "MSC ELSA 3",
+    "issued": "30 May, 22:00 IST",
+    "run_id": 2,
+    "source": "DriftSight prototype \u2014 simulated imagery and ocean fields"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.2053,
+          8.2107
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Kanyakumari coast",
+        "level": "HIGH",
+        "confidence": 0.91,
+        "zone_kind": "coast",
+        "action": "Beach survey and manual pellet collection; alert fishing villages.",
+        "nearest_harbour": "Colachel"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.4625,
+          8.0125
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch A (at sea)",
+        "level": "HIGH",
+        "confidence": 0.92,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.0064,
+          8.0861
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch C (at sea)",
+        "level": "MEDIUM",
+        "confidence": 0.94,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Colachel"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.4707,
+          7.7974
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch B (at sea)",
+        "level": "LOW",
+        "confidence": 0.76,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Chinnamuttom"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.1441,
+          7.8655
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Patch D (at sea)",
+        "level": "LOW",
+        "confidence": 0.55,
+        "zone_kind": "sea",
+        "action": "Boat verification, then boom / skimmer recovery if confirmed.",
+        "nearest_harbour": "Colachel"
+      }
+    }
+  ]
+}

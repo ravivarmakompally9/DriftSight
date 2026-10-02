@@ -1,0 +1,49 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "incident": "MSC ELSA 3",
+    "issued": "25 May, 22:00 IST",
+    "run_id": 2,
+    "source": "DriftSight prototype \u2014 simulated imagery and ocean fields"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.8991,
+          8.4944
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Thiruvananthapuram coast",
+        "level": "HIGH",
+        "confidence": 0.95,
+        "zone_kind": "coast",
+        "action": "Beach survey and manual pellet collection; alert fishing villages.",
+        "nearest_harbour": "Vizhinjam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.653,
+          8.7975
+        ]
+      },
+      "properties": {
+        "kind": "priority_zone",
+        "name": "Kollam coast",
+        "level": "LOW",
+        "confidence": 0.57,
+        "zone_kind": "coast",
+        "action": "Beach survey and manual pellet collection; alert fishing villages.",
+        "nearest_harbour": "Neendakara"
+      }
+    }
+  ]
+}
