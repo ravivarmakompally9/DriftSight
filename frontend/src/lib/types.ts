@@ -115,6 +115,12 @@ export interface Detection {
   lon: number; lat: number; area_m2: number; pixels: number; score: number; fdi: number;
   track: string | null; status: TrackStatusName; simulated: boolean;
   where?: string; area_phrase?: string; pitches?: number;
+  thumb?: string; thumb_probability?: string;
+  outcome?: {
+    track: string; status: TrackStatusName; sightings: number;
+    decided_at: string | null; decided_pass: string | null;
+    text: string; confidence: number;
+  };
   chip?: ChipData; spectrum?: { detected: number[]; water: number[] };
 }
 

@@ -1,15 +1,14 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileUp, Loader2, MapPin, ScanSearch } from "lucide-react";
+import { FileUp, Loader2, ScanSearch } from "lucide-react";
 import { toast } from "sonner";
 
-import { ChipPair } from "@/components/ChipCanvas";
-import { SpectrumChart } from "@/components/charts/SpectrumChart";
+import { DetectionDetail } from "@/components/DetectionDetail";
 import { EmptyState } from "@/components/EmptyState";
+import { LikelihoodMeter } from "@/components/LikelihoodMeter";
 import { StatusPill } from "@/components/Pills";
-import { Row } from "@/components/TrackDetail";
 import { Button } from "@/components/ui/button";
-import { Card, CardActions, CardBody, CardHeader, CardSub, CardTitle } from "@/components/ui/card";
+import { Card, CardActions, CardHeader, CardSub, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -30,7 +29,6 @@ export default function Detections() {
   const navigate = useNavigate();
   const hour = useAppStore((s) => s.hour);
   const select = useAppStore((s) => s.select);
-  const showTruth = useAppStore((s) => s.layers.truth);
   const [filter, setFilter] = useState<string>("all");
   const [picked, setPicked] = useState<number | null>(null);
 
@@ -82,13 +80,21 @@ export default function Detections() {
           <Table>
             <thead>
               <tr>
-                <Th>ID</Th><Th>Pass</Th><Th>Where</Th><Th numeric>How much</Th>
-                <Th>Plastic likelihood</Th><Th>Track</Th><Th>Verdict</Th>
+                <Th className="w-px"> </Th><Th>ID</Th><Th>Pass</Th><Th>Where</Th>
+                <Th numeric>How much</Th><Th>Plastic likelihood</Th><Th>Track</Th><Th>Verdict</Th>
               </tr>
             </thead>
             <tbody>
               {rows.map((d) => (
                 <Tr key={d.id} clickable selected={d.id === currentId} onClick={() => setPicked(d.id)}>
+                  <Td className="pr-0">
+                    {d.thumb && (
+                      <img
+                        src={d.thumb} alt="" width={40} height={40}
+                        className="block h-10 w-10 min-w-10 shrink-0 rounded-md object-cover ring-1 ring-line [image-rendering:pixelated]"
+                      />
+                    )}
+                  </Td>
                   <Td className="font-mono">{d.ref}</Td>
                   <Td>{d.as_of}</Td>
                   <Td>
@@ -96,14 +102,7 @@ export default function Detections() {
                     <div className="font-mono text-[11px] text-ink-3">{latlon(d.lat, d.lon)}</div>
                   </Td>
                   <Td numeric>{num(d.area_m2)} m²</Td>
-                  <Td>
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-[60px] overflow-hidden rounded-full bg-sunken">
-                        <b className="block h-full rounded-full bg-brand" style={{ width: `${d.score * 100}%` }} />
-                      </span>
-                      <span className="font-mono text-[12px] tnum">{pct(d.score)}</span>
-                    </div>
-                  </Td>
+                  <Td><LikelihoodMeter value={d.score} /></Td>
                   <Td>{d.track ?? "—"}</Td>
                   <Td><StatusPill status={d.status} /></Td>
                 </Tr>
@@ -114,50 +113,17 @@ export default function Detections() {
         {!rows.length && <EmptyState icon={ScanSearch} title="No detections match this filter" />}
       </Card>
 
-      {detail.data && (
-        <Card className="xl:sticky xl:top-0">
-          <CardHeader>
-            <CardTitle>{detail.data.ref}</CardTitle>
-            <StatusPill status={detail.data.status} />
-            <CardActions>
-              <Button
-                size="sm"
-                onClick={() => {
-                  if (detail.data?.track) select({ type: "track", id: detail.data.track });
-                  navigate("/map");
-                }}
-              >
-                <MapPin size={14} />
-                Show on map
-              </Button>
-            </CardActions>
-          </CardHeader>
-          <CardBody className="grid gap-3.5">
-            {detail.data.chip && <ChipPair chip={detail.data.chip} />}
-            {detail.data.spectrum && model.data && (
-              <SpectrumChart
-                detected={detail.data.spectrum.detected}
-                water={detail.data.spectrum.water}
-                reference={model.data.spectra.debris}
-              />
-            )}
-            <dl className="m-0 grid grid-cols-[minmax(110px,1fr)_auto] gap-x-4 gap-y-1.5 text-[13px]">
-              <Row label="Sensor" value={detail.data.sensor} />
-              <Row label="Plastic likelihood" value={pct(detail.data.score)} />
-              <Row label="Where" value={detail.data.where ?? "—"} />
-              <Row label="How much" value={detail.data.area_phrase ?? `${num(detail.data.area_m2)} m²`} />
-              <Row label="Pixels above 50%" value={`${detail.data.pixels} (${num(detail.data.area_m2)} m²)`} />
-              <Row label="Mean FDI" value={detail.data.fdi.toFixed(3)} />
-              <Row label="Linked track" value={detail.data.track ?? "—"} />
-            </dl>
-            <p className="text-xs leading-relaxed text-ink-3">
-              A single image cannot separate plastic from look-alikes reliably. DriftSight waits for the
-              next clear pass: real debris re-appears where the currents predicted.
-              {showTruth && detail.data.track && " Turn off the hidden-truth layer to judge it blind."}
-            </p>
-          </CardBody>
-        </Card>
-      )}
+      <div className="xl:sticky xl:top-0">
+        <DetectionDetail
+          detection={detail.data}
+          model={model.data}
+          loading={detail.isLoading}
+          onShowOnMap={() => {
+            if (detail.data?.track) select({ type: "track", id: detail.data.track });
+            navigate("/map");
+          }}
+        />
+      </div>
     </div>
   );
 }

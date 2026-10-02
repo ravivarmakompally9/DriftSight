@@ -11,6 +11,7 @@ import numpy as np
 from app.core.timebase import day_label, iso, label_ist, time_label
 from app.analysis.quantify import area_phrase, describe_position, pitches
 from app.detect.chips import CHIP
+from app.detect.preview import probability_png, true_colour_png
 from app.drift.particles import AFLOAT, BEACHED, LOST
 from app.scenario.elsa3 import PASSES, SKY_LABEL, sky
 
@@ -93,9 +94,32 @@ def detection_payload(run, d: dict, h: int | None = None, full: bool = False) ->
         "where": describe_position(d["lon"], d["lat"]),
         "area_phrase": area_phrase(d["area_m2"]),
         "pitches": pitches(d["area_m2"]),
+        # a few hundred bytes each, so a list of detections can be looked at
+        # rather than only read
+        "thumb": true_colour_png(d["chip"]),
+        "thumb_probability": probability_png(d["chip"]),
         "simulated": True,
     }
     if full:
+        # What became of this candidate. A detection on its own is a guess; the
+        # verdict is the only part that matters operationally, and it was
+        # decided at a later pass.
+        tr = run.track(d["track"]) if d.get("track") else None
+        if tr is not None:
+            decided = next((e for e in run.events
+                            if e.get("track") == tr.id and e["kind"] in ("confirmed", "rejected")),
+                           None)
+            seen = [i for i in tr.detections]
+            out["outcome"] = {
+                "track": tr.id,
+                "status": tr.status,
+                "sightings": len(seen),
+                "decided_at": label_ist(decided["h"]) if decided else None,
+                "decided_pass": (decided["text"].split(":")[0] if decided else None),
+                "text": (decided["text"].split(": ", 1)[-1] if decided
+                         else f"{tr.id} is still unconfirmed — it needs another clear pass."),
+                "confidence": round(tr.confidence, 3),
+            }
         chip = d["chip"]
         out["chip"] = {
             "size": CHIP,
